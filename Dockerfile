@@ -11,7 +11,7 @@ LABEL name=$NAME \
       version=$VERSION
 
 
-COPY ./* /app/guard_server/
+COPY ./ /app/guard_server/
 
 EXPOSE 5000 
 
