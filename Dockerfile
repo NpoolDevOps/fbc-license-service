@@ -15,7 +15,7 @@ COPY ./* /app/guard_server/
 
 EXPOSE 5000 
 
-Run go build main.go
+Run go build /app/guard_server/main.go
 
-CMD ["./main"]
+CMD ["/app/guard_server/main"]
 
