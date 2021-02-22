@@ -196,28 +196,28 @@ func (self *GuardServer) StartUpRequest(w http.ResponseWriter, req *http.Request
             response["softwareUuid"] = queryInfo.Id
         } else {
             count := mysql_orm.GetSoftwareCount(self.mysqlClient, param.ClientSn)
-            if count < dbUserInfo.Volume{
-                newInfo := mysql_orm.SoftwareInfo{
-                    Id: uuid.New(),
-                    SoftwareSn: param.ClientSn,
-                    SystemSn: param.SystemSn,
-                    Status: STATUS_UP,
-                    CreateTime: time.Now(),
-                    ModifyTime: time.Now(),
-                }
-                mysql_orm.InsertSoftwareInfo(self.mysqlClient, newInfo)
-    
-                redisnewInfo := redis_orm.RedisSoftwareInfo{
-                    Id:         newInfo.Id,
-                    SessionId:  sessionId,
-                    StartUpreq: param,
-                    RsaPair:    *self.rsaObjMap[sessionId],
-                }
-                self.softwareInfoMap[redisnewInfo.Id] = &redisnewInfo
-                redis_orm.RedisInsertNewInfo(redisnewInfo, self.redisClient, self.redisTtl)
-                response["startUp"]    = true
-                response["softwareUuid"] = newInfo.Id
+            //if count < dbUserInfo.Volume{
+            newInfo := mysql_orm.SoftwareInfo{
+                Id: uuid.New(),
+                SoftwareSn: param.ClientSn,
+                SystemSn: param.SystemSn,
+                Status: STATUS_UP,
+                CreateTime: time.Now(),
+                ModifyTime: time.Now(),
             }
+            mysql_orm.InsertSoftwareInfo(self.mysqlClient, newInfo)
+
+            redisnewInfo := redis_orm.RedisSoftwareInfo{
+                Id:         newInfo.Id,
+                SessionId:  sessionId,
+                StartUpreq: param,
+                RsaPair:    *self.rsaObjMap[sessionId],
+            }
+            self.softwareInfoMap[redisnewInfo.Id] = &redisnewInfo
+            redis_orm.RedisInsertNewInfo(redisnewInfo, self.redisClient, self.redisTtl)
+            response["startUp"]    = true
+            response["softwareUuid"] = newInfo.Id
+            //}
         }
     }
     fmt.Println(response)
@@ -235,12 +235,19 @@ func (self *GuardServer) HeartbeatRequest(w http.ResponseWriter, req *http.Reque
         return nil, err, -1
     }
 
+    self.newMysqlClient()
+    defer self.closeMysqlClient()
+
     mapBody := body.(map[string]interface{})
     sessionId := mapBody["sessionId"]
     softwareId := mapBody["softwareUuid"]
+    softWareInfo := mysql_orm.GetSoftwareDevopsStatus(self.mysqlClient, softwareId)
     fmt.Println(sessionId, softwareId)
     response := make(map[string]interface{})
     response["stop"] = false
+    if softwareInfo == nil || (softwareInfo != nil && softwareInfo.DevopsStatus != 0) {
+        response["stop"] = true
+    }
     jresponse, _ := json.Marshal(response)
     ciphertext, _ := self.rsaObjMap[sessionId.(string)].RemoteRsa.Encrypt(jresponse)
     return hex.EncodeToString(ciphertext), nil, 0

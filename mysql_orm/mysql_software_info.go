@@ -12,6 +12,7 @@ type SoftwareInfo struct{
     SoftwareSn string    `gorm:"column:software_sn"`
     SystemSn   string    `gorm:"column:system_sn"`
     Status     int       `gorm:"column:status"`
+    DevopsStatus int     `gorm:"column:devops_status"`
     CreateTime time.Time    `gorm:"column:create_time"`
     ModifyTime time.Time    `gorm:"column:modify_time"`
 }
@@ -51,5 +52,18 @@ func QuerySoftwareInfos(db *gorm.DB) [] SoftwareInfo{
     var softInfos []SoftwareInfo
     db.Find(&softInfos)
     return softInfos
+}
+
+
+func GetSoftwareDevopsStatus(db *gorm.DB, uuid string) SoftwareInfo {
+
+    var softInfo SoftwareInfo
+    var count int
+    db.Find(&softInfo).Count(&count)
+
+    if count == 0{
+        return nil
+    }
+    return softInfo
 }
 
