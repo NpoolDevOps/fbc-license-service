@@ -32,13 +32,13 @@ func QuerySoftwareInfoBySystemSn(db *gorm.DB, systemSn string) *SoftwareInfo{
     if count == 0{
         return nil
     }
-    
+
     return &softInfo
 }
 
 
 func GetSoftwareCount(db *gorm.DB, softwareSn string) int {
-    
+
     var softInfos []SoftwareInfo
     var count int
 
@@ -55,15 +55,15 @@ func QuerySoftwareInfos(db *gorm.DB) [] SoftwareInfo{
 }
 
 
-func GetSoftwareDevopsStatus(db *gorm.DB, uuid string) SoftwareInfo {
+func GetSoftwareDevopsStatus(db *gorm.DB, uuid string) *SoftwareInfo {
 
     var softInfo SoftwareInfo
     var count int
-    db.Find(&softInfo).Count(&count)
+    db.Where("id=?", uuid).Find(&softInfo).Count(&count)
 
     if count == 0{
         return nil
     }
-    return softInfo
+    return &softInfo
 }
 

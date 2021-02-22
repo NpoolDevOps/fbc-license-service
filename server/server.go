@@ -142,7 +142,7 @@ func (self *GuardServer) ExchangeKeyRequest(w http.ResponseWriter, req *http.Req
         LocalRsa: localRsaObj,
     }
     self.rsaObjMap[sessionId] = rsaPair
-    
+
     response := make(map[string]interface{})
     response["sessionId"] = sessionId
     response["public_key"] = string(localRsaObj.GetPubkey())
@@ -152,7 +152,7 @@ func (self *GuardServer) ExchangeKeyRequest(w http.ResponseWriter, req *http.Req
 
 
 func (self *GuardServer) StartUpRequest(w http.ResponseWriter, req *http.Request)(interface{}, error, int){
-    
+
     body, err := utils.ReadRequestBody(req)
     if err != nil {
         fmt.Println(err)
@@ -195,8 +195,8 @@ func (self *GuardServer) StartUpRequest(w http.ResponseWriter, req *http.Request
             response["startUp"]    = true
             response["softwareUuid"] = queryInfo.Id
         } else {
-            count := mysql_orm.GetSoftwareCount(self.mysqlClient, param.ClientSn)
-            //if count < dbUserInfo.Volume{
+            // count := mysql_orm.GetSoftwareCount(self.mysqlClient, param.ClientSn)
+            // if count < dbUserInfo.Volume{
             newInfo := mysql_orm.SoftwareInfo{
                 Id: uuid.New(),
                 SoftwareSn: param.ClientSn,
@@ -228,7 +228,7 @@ func (self *GuardServer) StartUpRequest(w http.ResponseWriter, req *http.Request
 
 
 func (self *GuardServer) HeartbeatRequest(w http.ResponseWriter, req *http.Request)(interface{}, error, int){
-    
+
     body, err := utils.ReadRequestBody(req)
     if err != nil {
         fmt.Println(err)
@@ -240,9 +240,10 @@ func (self *GuardServer) HeartbeatRequest(w http.ResponseWriter, req *http.Reque
 
     mapBody := body.(map[string]interface{})
     sessionId := mapBody["sessionId"]
-    softwareId := mapBody["softwareUuid"]
-    softWareInfo := mysql_orm.GetSoftwareDevopsStatus(self.mysqlClient, softwareId)
+    softwareId := mapBody["softwareUuid"].(string)
+    softwareInfo := mysql_orm.GetSoftwareDevopsStatus(self.mysqlClient, softwareId)
     fmt.Println(sessionId, softwareId)
+    fmt.Printf("%v\n", softwareInfo)
     response := make(map[string]interface{})
     response["stop"] = false
     if softwareInfo == nil || (softwareInfo != nil && softwareInfo.DevopsStatus != 0) {
