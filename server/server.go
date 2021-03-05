@@ -104,38 +104,6 @@ func (self *GuardServer) closeMysqlClient(cli *gorm.DB){
 }
 
 
-/*func (self *GuardServer) newRedisClient(){
-    if self.redisClient == nil{
-        self.redisClient = redis_orm.NewRedisClient(self.redisAddr)
-    }
-}
-
-
-func (self *GuardServer) closeRedisClient(){
-    if self.redisClient != nil{
-        self.redisClient.Close()
-        self.redisClient = nil
-    }
-}
-
-
-func (self *GuardServer) newMysqlClient(){
-
-    if self.mysqlClient == nil {
-        self.mysqlClient, _ = mysql_orm.NewDbOrm(self.dbType, self.dbUrl)
-    }
-}
-
-
-func (self *GuardServer) closeMysqlClient(){
-
-    if self.mysqlClient != nil{
-        mysql_orm.DbOrmClose(self.mysqlClient)
-        self.mysqlClient = nil
-    }
-}*/
-
-
 func (self *GuardServer) Boot(){
 
     db, err := self.newMysqlClient()

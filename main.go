@@ -16,9 +16,9 @@ import (
 var rsaObj = rsa_crypto.NewRsaCrypto(1024)
 
 var authText = flag.String("authText", "The copyright belongs to npool cop.", "Auth text used at client")
-var redisAddr = flag.String("redisAddr", "192.168.50.165:6379", "redis server address")
+var redisAddr = flag.String("redisAddr", "47.99.107.242:6379", "redis server address")
 var dbType = flag.String("dbType", "mysql", "dbType")
-var dbUrl = flag.String("dbUrl", "root:123456@tcp(192.168.50.165:3306)/software_guard?charset=utf8&parseTime=True&loc=Local",
+var dbUrl = flag.String("dbUrl", "root:123456@tcp(47.99.107.242:3306)/software_guard?charset=utf8&parseTime=True&loc=Local",
  "url of mysql")
 var redisTtl = flag.Int("redisTtl", 3*3600, "second for redis ttl")
 
