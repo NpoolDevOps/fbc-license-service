@@ -40,7 +40,7 @@ func RedisQuerysoftwareInfo(key string, client *redis.Client) *RedisSoftwareInfo
 
     val, err := client.Get(key).Result()
     if err != nil{
-        fmt.Printf("RedisQuerysoftwareInfoFailed\n")
+        fmt.Printf("RedisQuerysoftwareInfoFailed\n", err)
         return nil
     }
     b := []byte(val)
