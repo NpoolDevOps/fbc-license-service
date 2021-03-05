@@ -2,12 +2,12 @@ package redis_orm
 
 
 import(
-    "log"
+    log "github.com/EntropyPool/entropy-logger"
     "github.com/go-redis/redis"
 )
 
 
-func NewRedisClient(addr string) *redis.Client{
+func NewRedisClient(addr string) (*redis.Client, error){
 
      client := redis.NewClient(&redis.Options{
          Addr:addr,
@@ -16,16 +16,17 @@ func NewRedisClient(addr string) *redis.Client{
 
      pong, err := client.Ping().Result()
      if err != nil {
-        log.Fatal(err) 
+        log.Errorf(log.Fields{}, "NewReidsClient error [%v]", err)
+        return nil, err
      }
 
      if pong != "PONG" {
-         log.Fatal("Redis connect failed!")
+         log.Errorf(log.Fields{}, "Redis connect failed!")
      } else {
-         log.Println("Redis connect success!")
+         log.Infof(log.Fields{}, "Redis connect success!")
      }
 
-     return client
+     return client, nil
 }
 
 

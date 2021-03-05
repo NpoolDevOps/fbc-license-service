@@ -16,6 +16,8 @@ import (
     "guard_server/rsa_crypto"
     "guard_server/http_daemon"
     "guard_server/mysql_orm"
+    log "github.com/EntropyPool/entropy-logger"
+
 )
 
 
@@ -72,7 +74,37 @@ func (self *GuardServer) RegisterHandler(){
 }
 
 
-func (self *GuardServer) newRedisClient(){
+/*functions used for mysql && redis orm*/
+func (self *GuardServer) newRedisClient() (*redis.Client, error){
+    return redis_orm.NewRedisClient(self.redisAddr)
+}
+
+
+func (self *GuardServer) closeRedisClient(redisClient *redis.Client){
+    redisClient.Close()
+}
+
+
+func (self *GuardServer) newMysqlClient() (*gorm.DB, error) {
+
+    cli, err := mysql_orm.NewDbOrm(self.dbType, self.dbUrl)
+    if err != nil{
+        log.Errorf(log.Fields{}, "Create Mysql Client Failed %v / %v [%v]", self.dbType, self.dbUrl, err)
+        return nil, err
+    }
+
+    log.Infof(log.Fields{}, "Create Mysql Client success %v / %v", self.dbType, self.dbUrl)
+
+    return cli, nil
+}
+
+
+func (self *GuardServer) closeMysqlClient(cli *gorm.DB){
+    mysql_orm.DbOrmClose(cli)
+}
+
+
+/*func (self *GuardServer) newRedisClient(){
     if self.redisClient == nil{
         self.redisClient = redis_orm.NewRedisClient(self.redisAddr)
     }
@@ -90,8 +122,7 @@ func (self *GuardServer) closeRedisClient(){
 func (self *GuardServer) newMysqlClient(){
 
     if self.mysqlClient == nil {
-        self.mysqlClient, _ = mysql_orm.NewDbOrm(self.dbType,
-            self.dbUrl)
+        self.mysqlClient, _ = mysql_orm.NewDbOrm(self.dbType, self.dbUrl)
     }
 }
 
@@ -102,22 +133,30 @@ func (self *GuardServer) closeMysqlClient(){
         mysql_orm.DbOrmClose(self.mysqlClient)
         self.mysqlClient = nil
     }
-}
+}*/
 
 
 func (self *GuardServer) Boot(){
 
-    self.newMysqlClient()
-    defer self.closeMysqlClient()
+    db, err := self.newMysqlClient()
+    if err != nil {
+        log.Errorf(log.Fields{}, "Boot newMysqlclient Failed [%v]", err)
+        return
+    }
+    defer self.closeMysqlClient(db)
 
-    self.newRedisClient()
-    defer self.closeRedisClient()
+    redisDb, err := self.newRedisClient()
+    if err != nil {
+        log.Errorf(log.Fields{}, "Boot newRedisClient Failed [%v]", err)
+        return
+    }
+    defer self.closeRedisClient(redisDb)
 
-    infos := mysql_orm.QuerySoftwareInfos(self.mysqlClient)
+    infos := mysql_orm.QuerySoftwareInfos(db)
     for index := range infos{
         info := infos[index]
         key := redisKeyPrefix+info.Id
-        redisInfo := redis_orm.RedisQuerysoftwareInfo(key, self.redisClient)
+        redisInfo := redis_orm.RedisQuerysoftwareInfo(key, redisDb)
         if redisInfo != nil{
             self.softwareInfoMap[redisInfo.Id] = redisInfo
         }
@@ -130,6 +169,7 @@ func (self *GuardServer) ExchangeKeyRequest(w http.ResponseWriter, req *http.Req
 
     body, err := utils.ReadRequestBody(req)
     if err != nil {
+        log.Errorf(log.Fields{}, "ExchangeKeyRequest ReadRequestBody Failed [%v]", err)
         return nil, err, -1
     }
 
@@ -155,7 +195,7 @@ func (self *GuardServer) StartUpRequest(w http.ResponseWriter, req *http.Request
 
     body, err := utils.ReadRequestBody(req)
     if err != nil {
-        fmt.Println(err)
+        log.Errorf(log.Fields{}, "StartUpRequest ReadRequestBody Failed [%v]", err)
         return nil, err, -1
     }
 
@@ -171,17 +211,25 @@ func (self *GuardServer) StartUpRequest(w http.ResponseWriter, req *http.Request
     }
     fmt.Printf("param: %+v\n", param)
 
-    self.newMysqlClient()
-    defer self.closeMysqlClient()
-    self.newRedisClient()
-    defer self.closeRedisClient()
+    db, err := self.newMysqlClient()
+    if err != nil {
+        log.Errorf(log.Fields{}, "StartUpRequest newMysqlClient Failed [%v]", err)
+        return nil, err, -1
+    }
+    defer self.closeMysqlClient(db)
+    redisDb, err := self.newRedisClient()
+    if err != nil {
+        log.Errorf(log.Fields{}, "StartUpRequest newRedisClient Failed [%v]", err)
+        return nil, err, -1
+    }
+    defer self.closeRedisClient(redisDb)
 
     response := make(map[string]interface{})
     response["authText"] = self.authText
     response["sessionId"] = sessionId
     response["startUp"] = false
-    dbUserInfo := mysql_orm.QueryUserInfoBySn(self.mysqlClient, param.ClientSn)
-    queryInfo := mysql_orm.QuerySoftwareInfoBySystemSn(self.mysqlClient, param.SystemSn)
+    dbUserInfo := mysql_orm.QueryUserInfoBySn(db, param.ClientSn)
+    queryInfo := mysql_orm.QuerySoftwareInfoBySystemSn(db, param.SystemSn)
     if dbUserInfo != nil{
         if queryInfo != nil {
             redisnewInfo := redis_orm.RedisSoftwareInfo{
@@ -191,7 +239,7 @@ func (self *GuardServer) StartUpRequest(w http.ResponseWriter, req *http.Request
                 RsaPair:    *self.rsaObjMap[sessionId],
             }
             self.softwareInfoMap[queryInfo.Id] = &redisnewInfo
-            redis_orm.RedisInsertNewInfo(redisnewInfo, self.redisClient, self.redisTtl)
+            redis_orm.RedisInsertNewInfo(redisnewInfo, redisDb, self.redisTtl)
             response["startUp"]    = true
             response["softwareUuid"] = queryInfo.Id
         } else {
@@ -205,7 +253,7 @@ func (self *GuardServer) StartUpRequest(w http.ResponseWriter, req *http.Request
                 CreateTime: time.Now(),
                 ModifyTime: time.Now(),
             }
-            mysql_orm.InsertSoftwareInfo(self.mysqlClient, newInfo)
+            mysql_orm.InsertSoftwareInfo(db, newInfo)
 
             redisnewInfo := redis_orm.RedisSoftwareInfo{
                 Id:         newInfo.Id,
@@ -214,7 +262,7 @@ func (self *GuardServer) StartUpRequest(w http.ResponseWriter, req *http.Request
                 RsaPair:    *self.rsaObjMap[sessionId],
             }
             self.softwareInfoMap[redisnewInfo.Id] = &redisnewInfo
-            redis_orm.RedisInsertNewInfo(redisnewInfo, self.redisClient, self.redisTtl)
+            redis_orm.RedisInsertNewInfo(redisnewInfo, redisDb, self.redisTtl)
             response["startUp"]    = true
             response["softwareUuid"] = newInfo.Id
             //}
@@ -231,17 +279,21 @@ func (self *GuardServer) HeartbeatRequest(w http.ResponseWriter, req *http.Reque
 
     body, err := utils.ReadRequestBody(req)
     if err != nil {
-        fmt.Println(err)
+        log.Errorf(log.Fields{}, "HeartbeatRequest ReadRequestBody Failed [%v]", err)
         return nil, err, -1
     }
 
-    self.newMysqlClient()
-    defer self.closeMysqlClient()
+    db, err := self.newMysqlClient()
+    if err != nil {
+        log.Errorf(log.Fields{}, "HeartbeatRequest newMysqlClient Failed [%v]", err)
+        return nil, err, -1
+    }
+    defer self.closeMysqlClient(db)
 
     mapBody := body.(map[string]interface{})
     sessionId := mapBody["sessionId"]
     softwareId := mapBody["softwareUuid"].(string)
-    softwareInfo := mysql_orm.GetSoftwareDevopsStatus(self.mysqlClient, softwareId)
+    softwareInfo := mysql_orm.GetSoftwareDevopsStatus(db, softwareId)
     fmt.Println(sessionId, softwareId)
     fmt.Printf("%v\n", softwareInfo)
     response := make(map[string]interface{})
