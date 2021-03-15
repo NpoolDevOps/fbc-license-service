@@ -2,7 +2,7 @@ FROM golang:latest
 
 ENV GO111MODULE on
 ENV GOPROXY https://goproxy.cn,direct
-WORKDIR /app/guard_server/
+WORKDIR /app/fbc-license-service/
 
 ARG NAME
 ARG VERSION
@@ -11,11 +11,11 @@ LABEL name=$NAME \
       version=$VERSION
 
 
-COPY ./ /app/guard_server/
+COPY ./ /app/fbc-license-service/
 
-EXPOSE 5000 
+EXPOSE 5000
 
-Run go build /app/guard_server/main.go
+Run go build /app/fbc-license-service/main.go
 
-CMD ["/app/guard_server/main"]
+CMD ["/app/fbc-service-service/main"]
 

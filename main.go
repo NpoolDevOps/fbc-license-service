@@ -1,73 +1,36 @@
 package main
 
-
 import (
-    "fmt"
-    "flag"
-    "io/ioutil"
-    "net/http"
-    "encoding/json"
-    "encoding/hex"
-    "guard_server/server"
-    "guard_server/rsa_crypto"
-    "guard_server/http_daemon"
+	log "github.com/EntropyPool/entropy-logger"
+	"github.com/urfave/cli/v2"
+	"golang.org/x/xerrors"
+	"os"
 )
 
-var rsaObj = rsa_crypto.NewRsaCrypto(1024)
+func main() {
+	app := &cli.App{
+		Name:                 "fbc-license-service",
+		Usage:                "FBC license service for software license",
+		Version:              "0.1.0",
+		EnableBashCompletion: true,
+		Flags: []cli.Flag{
+			&cli.StringFlag{
+				Name:  "config",
+				Value: "./fbc-license-service.conf",
+			},
+		},
+		Action: func(cctx *cli.Context) error {
+			configFile := cctx.String("config")
+			server := NewAuthServer(configFile)
+			if server == nil {
+				return xerrors.Errorf("cannot create auth server")
+			}
+			return server.Run()
+		},
+	}
 
-var authText = flag.String("authText", "The copyright belongs to npool cop.", "Auth text used at client")
-var redisAddr = flag.String("redisAddr", "47.99.107.242:6379", "redis server address")
-var dbType = flag.String("dbType", "mysql", "dbType")
-var dbUrl = flag.String("dbUrl", "root:123456@tcp(47.99.107.242:3306)/software_guard?charset=utf8&parseTime=True&loc=Local",
- "url of mysql")
-var redisTtl = flag.Int("redisTtl", 3*3600, "second for redis ttl")
-
-func test(w http.ResponseWriter, req *http.Request)(interface{}, error, int){
-
-    body, _ := ioutil.ReadAll(req.Body)
-    var msg map[string]interface{}
-    err := json.Unmarshal(body, &msg)
-    if err != nil {
-        return nil, err, -1
-    }
-    fmt.Printf("%#v\n", msg)
-    text,_ := hex.DecodeString(msg["text"].(string))
-    decrypto,err1 := rsaObj.Decrypt(text)
-    fmt.Println("test",string(decrypto))
-    fmt.Println(err1)
-
-    return nil, nil, 0
+	err := app.Run(os.Args)
+	if err != nil {
+		log.Fatalf(log.Fields{}, "fail to run %v", app.Name)
+	}
 }
-
-
-func exchangeKey(w http.ResponseWriter, req *http.Request)(interface{}, error, int){
-
-    fmt.Println("exchangeKey")
-    resp := make(map[string]string)
-    resp["public_key"] = string(rsaObj.GetPubkey())
-    fmt.Println("exchangeKey", resp)
-
-    return resp, nil, 0
-}
-
-
-func main(){
-
-    flag.Parse()
-
-    config := make(map[string]interface{})
-    config["authText"] = *authText
-    config["redisAddr"] = *redisAddr
-    config["dbType"] = *dbType
-    config["dbUrl"]  = *dbUrl
-    config["redisTtl"] = *redisTtl
-    gServer := server.NewGuardServer(config)
-    gServer.Boot()
-    gServer.RegisterHandler()
-
-    http_daemon.Run(5000)
-
-    quit := make(chan int)
-     <- quit
-}
-
