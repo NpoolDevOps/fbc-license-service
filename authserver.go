@@ -30,11 +30,21 @@ func NewAuthServer(configFile string) *AuthServer {
 		return nil
 	}
 
+	redisCli := NewRedisCli(config.RedisCfg)
+	if redisCli == nil {
+		return nil
+	}
+
+	mysqlCli := NewMysqlCli(config.MysqlCfg)
+	if mysqlCli == nil {
+		return nil
+	}
+
 	server := &AuthServer{
 		config:      config,
 		authText:    fbclib.FBCAuthText,
-		redisClient: NewRedisCli(config.RedisCfg),
-		mysqlClient: NewMysqlCli(config.MysqlCfg),
+		redisClient: redisCli,
+		mysqlClient: mysqlCli,
 	}
 
 	return server
