@@ -122,28 +122,6 @@ func (self *GuardServer) Boot() {
 }
 
 func (self *GuardServer) ExchangeKeyRequest(w http.ResponseWriter, req *http.Request) (interface{}, error, int) {
-
-	body, err := utils.ReadRequestBody(req)
-	if err != nil {
-		log.Errorf(log.Fields{}, "ExchangeKeyRequest ReadRequestBody Failed [%v]", err)
-		return nil, err, -1
-	}
-
-	pubkey := body.(map[string]interface{})["public_key"]
-	remoteRsaObj := rsa_crypto.NewRsaCryptoWithParam([]byte(pubkey.(string)), nil)
-	localRsaObj := rsa_crypto.NewRsaCrypto(1024)
-	sessionId := uuid.New()
-	rsaPair := &msg_struct.RsaPair{
-		RemoteRsa: remoteRsaObj,
-		LocalRsa:  localRsaObj,
-	}
-	self.rsaObjMap[sessionId] = rsaPair
-
-	response := make(map[string]interface{})
-	response["sessionId"] = sessionId
-	response["public_key"] = string(localRsaObj.GetPubkey())
-
-	return response, nil, 0
 }
 
 func (self *GuardServer) StartUpRequest(w http.ResponseWriter, req *http.Request) (interface{}, error, int) {

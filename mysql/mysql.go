@@ -1,4 +1,4 @@
-package main
+package fbcmysql
 
 import (
 	"fmt"
