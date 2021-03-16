@@ -93,6 +93,7 @@ func (s *AuthServer) Run() error {
 
 	httpdaemon.RegisterRouter(httpdaemon.HttpRouter{
 		Location: types.HeartbeatAPI,
+		Method:   "POST",
 		Handler: func(w http.ResponseWriter, req *http.Request) (interface{}, string, int) {
 			return s.HeartbeatRequest(w, req)
 		},
