@@ -25,7 +25,15 @@ func main() {
 			if server == nil {
 				return xerrors.Errorf("cannot create auth server")
 			}
-			return server.Run()
+			err := server.Run()
+			if err != nil {
+				return xerrors.Errorf("fail to run auto server: %v", err)
+			}
+
+			ch := make(chan int)
+			<-ch
+
+			return nil
 		},
 	}
 

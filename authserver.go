@@ -2,12 +2,12 @@ package main
 
 import (
 	"encoding/json"
-	"fbclicenseserver/crypto"
-	fbclib "fbclicenseserver/library"
-	fbcmysql "fbclicenseserver/mysql"
-	fbcredis "fbclicenseserver/redis"
-	types "fbclicenseserver/types"
 	log "github.com/EntropyPool/entropy-logger"
+	"github.com/NpoolDevOps/fbc-license-service/crypto"
+	fbclib "github.com/NpoolDevOps/fbc-license-service/library"
+	fbcmysql "github.com/NpoolDevOps/fbc-license-service/mysql"
+	fbcredis "github.com/NpoolDevOps/fbc-license-service/redis"
+	types "github.com/NpoolDevOps/fbc-license-service/types"
 	"github.com/NpoolRD/http-daemon"
 	"github.com/google/uuid"
 	"io/ioutil"
@@ -47,12 +47,14 @@ func NewAuthServer(configFile string) *AuthServer {
 		return nil
 	}
 
+	log.Infof(log.Fields{}, "create redis cli: %v", config.RedisCfg)
 	redisCli := fbcredis.NewRedisCli(config.RedisCfg)
 	if redisCli == nil {
 		log.Errorf(log.Fields{}, "cannot create redis client %v: %v", config.RedisCfg, err)
 		return nil
 	}
 
+	log.Infof(log.Fields{}, "create mysql cli: %v", config.MysqlCfg)
 	mysqlCli := fbcmysql.NewMysqlCli(config.MysqlCfg)
 	if mysqlCli == nil {
 		log.Errorf(log.Fields{}, "cannot create mysql client %v: %v", config.MysqlCfg, err)
@@ -67,12 +69,15 @@ func NewAuthServer(configFile string) *AuthServer {
 		clientCrypto: make(map[uuid.UUID]PairedCrypto),
 	}
 
+	log.Infof(log.Fields{}, "successful to create auth server")
+
 	return server
 }
 
 func (s *AuthServer) Run() error {
 	httpdaemon.RegisterRouter(httpdaemon.HttpRouter{
 		Location: "/api/v0/client/exchange_key",
+		Method:   "POST",
 		Handler: func(w http.ResponseWriter, req *http.Request) (interface{}, string, int) {
 			return s.ExchangeKeyRequest(w, req)
 		},
@@ -80,6 +85,7 @@ func (s *AuthServer) Run() error {
 
 	httpdaemon.RegisterRouter(httpdaemon.HttpRouter{
 		Location: "/api/v0/client/startup",
+		Method:   "POST",
 		Handler: func(w http.ResponseWriter, req *http.Request) (interface{}, string, int) {
 			return s.StartUpRequest(w, req)
 		},
@@ -92,6 +98,7 @@ func (s *AuthServer) Run() error {
 		},
 	})
 
+	log.Infof(log.Fields{}, "start http daemon at %v", s.config.Port)
 	httpdaemon.Run(s.config.Port)
 	return nil
 }

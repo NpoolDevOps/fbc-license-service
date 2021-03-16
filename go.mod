@@ -1,4 +1,4 @@
-module fbclicenseserver
+module github.com/NpoolDevOps/fbc-license-service
 
 go 1.15
 

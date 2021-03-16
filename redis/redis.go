@@ -27,6 +27,7 @@ func NewRedisCli(config RedisConfig) *RedisCli {
 		DB:   0,
 	})
 
+	log.Infof(log.Fields{}, "redis ping -> %v", config.Host)
 	pong, err := client.Ping().Result()
 	if err != nil {
 		log.Errorf(log.Fields{}, "new redis client error [%v]", err)

@@ -2,6 +2,7 @@ package fbcmysql
 
 import (
 	"fmt"
+	log "github.com/EntropyPool/entropy-logger"
 	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/mysql"
 	"time"
@@ -11,6 +12,7 @@ type MysqlConfig struct {
 	Host   string `json:"host"`
 	User   string `json:"user"`
 	Passwd string `json:"passwd"`
+	DbName string `json:"db"`
 }
 
 type MysqlCli struct {
@@ -22,15 +24,18 @@ type MysqlCli struct {
 func NewMysqlCli(config MysqlConfig) *MysqlCli {
 	cli := &MysqlCli{
 		config: config,
-		url: fmt.Sprintf("%v:%v@tcp(%v)/fbc-license-db?charset=utf8&parseTime=True&loc=Local",
-			config.User, config.Passwd, config.Host),
+		url: fmt.Sprintf("%v:%v@tcp(%v)/%v?charset=utf8&parseTime=True&loc=Local",
+			config.User, config.Passwd, config.Host, config.DbName),
 	}
 
+	log.Infof(log.Fields{}, "open mysql db %v", cli.url)
 	db, err := gorm.Open("mysql", cli.url)
 	if err != nil {
+		log.Errorf(log.Fields{}, "cannot open %v: %v", cli.url, err)
 		return nil
 	}
 
+	log.Infof(log.Fields{}, "successful to create mysql db %v", cli.url)
 	db.SingularTable(true)
 	cli.db = db
 
