@@ -50,7 +50,7 @@ func (cli *MysqlCli) Delete() {
 
 type UserInfo struct {
 	Id           uuid.UUID `gorm:"column:id;primary_key"`
-	UserName     string    `gorm:"column:user_name"`
+	UserName     string    `gorm:"column:username"`
 	ValidateDate time.Time `gorm:"column:validate_date"`
 	Quota        int       `gorm:"column:quota"`
 	Count        int       `gorm:"column:count"`
