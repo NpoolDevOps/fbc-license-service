@@ -17,3 +17,17 @@ type ExchangeKeyOutput struct {
 	SessionId uuid.UUID `json:"session_id"`
 	PublicKey string    `json:"public_key"`
 }
+
+type CommonInput struct {
+	SessionId uuid.UUID `json:"session_id"`
+}
+
+type ClientLoginInput struct {
+	CommonInput
+	ClientUser string `json:"client_user"`
+	ClientSN   string `json:"client_sn"`
+}
+
+type ClientLoginOutput struct {
+	ClientUuid uuid.UUID `json:"client_uuid"`
+}

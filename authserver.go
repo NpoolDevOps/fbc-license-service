@@ -76,7 +76,7 @@ func NewAuthServer(configFile string) *AuthServer {
 
 func (s *AuthServer) Run() error {
 	httpdaemon.RegisterRouter(httpdaemon.HttpRouter{
-		Location: "/api/v0/client/exchange_key",
+		Location: types.ExchangeKeyAPI,
 		Method:   "POST",
 		Handler: func(w http.ResponseWriter, req *http.Request) (interface{}, string, int) {
 			return s.ExchangeKeyRequest(w, req)
@@ -84,7 +84,7 @@ func (s *AuthServer) Run() error {
 	})
 
 	httpdaemon.RegisterRouter(httpdaemon.HttpRouter{
-		Location: "/api/v0/client/startup",
+		Location: types.LoginAPI,
 		Method:   "POST",
 		Handler: func(w http.ResponseWriter, req *http.Request) (interface{}, string, int) {
 			return s.StartUpRequest(w, req)
@@ -92,7 +92,7 @@ func (s *AuthServer) Run() error {
 	})
 
 	httpdaemon.RegisterRouter(httpdaemon.HttpRouter{
-		Location: "/api/v0/client/heartbeat",
+		Location: types.HeartbeatAPI,
 		Handler: func(w http.ResponseWriter, req *http.Request) (interface{}, string, int) {
 			return s.HeartbeatRequest(w, req)
 		},
