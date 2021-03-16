@@ -123,6 +123,18 @@ func (cli *MysqlCli) QueryClientInfoByClientSn(sn string) (*ClientInfo, error) {
 	return &info, nil
 }
 
+func (cli *MysqlCli) QueryClientInfoByClientId(id uuid.UUID) (*ClientInfo, error) {
+	var info ClientInfo
+	var count int
+
+	cli.db.Where("id = ?", id).Find(&info).Count(&count)
+	if count == 0 {
+		return nil, xerrors.Errorf("cannot find client")
+	}
+
+	return &info, nil
+}
+
 func (cli *MysqlCli) QueryClientCount(user string) int {
 	var infos []ClientInfo
 	var count int

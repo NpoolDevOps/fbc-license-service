@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/hex"
 	"encoding/json"
 	log "github.com/EntropyPool/entropy-logger"
 	"github.com/NpoolDevOps/fbc-license-service/crypto"
@@ -195,5 +196,44 @@ func (s *AuthServer) LoginRequest(w http.ResponseWriter, req *http.Request) (int
 }
 
 func (s *AuthServer) HeartbeatRequest(w http.ResponseWriter, req *http.Request) (interface{}, string, int) {
-	return nil, "", 0
+	b, _ := ioutil.ReadAll(req.Body)
+
+	var input = types.HeartbeatInput{}
+	err := json.Unmarshal(b, &input)
+	if err != nil {
+		log.Errorf(log.Fields{}, "fail to parse input parameter: %v [%v]", err, string(b))
+		return nil, err.Error(), -1
+	}
+
+	if _, ok := s.clientCrypto[input.SessionId]; !ok {
+		log.Errorf(log.Fields{}, "invalid session id: %v", input.SessionId)
+		return nil, "invalid session id", -2
+	}
+
+	_, err = s.redisClient.QuerySession(input.SessionId)
+	if err != nil {
+		log.Errorf(log.Fields{}, "fail to query session: %v", err)
+		return nil, err.Error(), -3
+	}
+
+	clientInfo, err := s.mysqlClient.QueryClientInfoByClientId(input.ClientUuid)
+	if err != nil {
+		log.Errorf(log.Fields{}, "fail to find client info: %v", err)
+		return nil, err.Error(), -4
+	}
+
+	shouldStop := false
+	switch clientInfo.Status {
+	case "maintaining":
+		shouldStop = true
+	}
+
+	output := types.HeartbeatOutput{
+		ShouldStop: shouldStop,
+	}
+
+	b, _ = json.Marshal(output)
+	cipherText, _ := s.clientCrypto[input.SessionId].RemoteRsa.Encrypt(b)
+
+	return hex.EncodeToString(cipherText), "", 0
 }
