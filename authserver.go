@@ -36,22 +36,26 @@ type AuthServer struct {
 func NewAuthServer(configFile string) *AuthServer {
 	buf, err := ioutil.ReadFile(configFile)
 	if err != nil {
+		log.Errorf(log.Fields{}, "cannot read file %v: %v", configFile, err)
 		return nil
 	}
 
 	config := AuthServerConfig{}
 	err = json.Unmarshal(buf, &config)
 	if err != nil {
+		log.Errorf(log.Fields{}, "cannot parse file %v: %v", configFile, err)
 		return nil
 	}
 
 	redisCli := fbcredis.NewRedisCli(config.RedisCfg)
 	if redisCli == nil {
+		log.Errorf(log.Fields{}, "cannot create redis client %v: %v", config.RedisCfg, err)
 		return nil
 	}
 
 	mysqlCli := fbcmysql.NewMysqlCli(config.MysqlCfg)
 	if mysqlCli == nil {
+		log.Errorf(log.Fields{}, "cannot create mysql client %v: %v", config.MysqlCfg, err)
 		return nil
 	}
 

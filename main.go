@@ -31,6 +31,6 @@ func main() {
 
 	err := app.Run(os.Args)
 	if err != nil {
-		log.Fatalf(log.Fields{}, "fail to run %v", app.Name)
+		log.Fatalf(log.Fields{}, "fail to run %v: %v", app.Name, err)
 	}
 }
