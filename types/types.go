@@ -31,3 +31,12 @@ type ClientLoginInput struct {
 type ClientLoginOutput struct {
 	ClientUuid uuid.UUID `json:"client_uuid"`
 }
+
+type HeartbeatInput struct {
+	CommonInput
+	ClientUuid uuid.UUID `json:"client_uuid"`
+}
+
+type HeartbeatOutput struct {
+	ShouldStop bool `json:"should_stop"`
+}
