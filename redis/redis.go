@@ -2,14 +2,16 @@ package fbcredis
 
 import (
 	"encoding/json"
+	"fmt"
 	log "github.com/EntropyPool/entropy-logger"
 	"github.com/go-redis/redis"
+	"github.com/google/uuid"
 	"time"
 )
 
 type RedisConfig struct {
-	Host string `json:"host"`
-	Ttl  int    `json:"ttl"`
+	Host string        `json:"host"`
+	Ttl  time.Duration `json:"ttl"`
 }
 
 type RedisCli struct {
@@ -48,28 +50,48 @@ func NewRedisCli(config RedisConfig) *RedisCli {
 var redisKeyPrefix = "fbc:license:server:"
 
 type ClientInfo struct {
-	Id        string
-	SessionId string
+	SessionId uuid.UUID
+	Id        uuid.UUID
 }
 
-func (cli *RedisCli) InsertClient(info ClientInfo, ttl int) error {
+func (cli *RedisCli) InsertKeyInfo(keyWord string, id uuid.UUID, info interface{}, ttl time.Duration) error {
 	b, err := json.Marshal(info)
 	if err != nil {
 		return err
 	}
-	err = cli.client.Set(redisKeyPrefix+info.Id, string(b), time.Duration(ttl)*time.Second).Err()
+	err = cli.client.Set(fmt.Sprintf("%v:%v:%v", redisKeyPrefix, keyWord, id),
+		string(b), ttl*time.Second).Err()
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func (cli *RedisCli) QueryClient(key string) (*ClientInfo, error) {
-	val, err := cli.client.Get(key).Result()
+func (cli *RedisCli) QueryClient(cid uuid.UUID) (*ClientInfo, error) {
+	val, err := cli.client.Get(fmt.Sprintf("%v:client:%v", redisKeyPrefix, cid)).Result()
 	if err != nil {
 		return nil, err
 	}
 	info := &ClientInfo{}
+	err = json.Unmarshal([]byte(val), info)
+	if err != nil {
+		return nil, err
+	}
+	return info, nil
+}
+
+type SessionInfo struct {
+	SessionId    string
+	MyPubKey     string
+	ClientPubKey string
+}
+
+func (cli *RedisCli) QuerySession(sid uuid.UUID) (*SessionInfo, error) {
+	val, err := cli.client.Get(fmt.Sprintf("%v:session:%v", redisKeyPrefix, sid)).Result()
+	if err != nil {
+		return nil, err
+	}
+	info := &SessionInfo{}
 	err = json.Unmarshal([]byte(val), info)
 	if err != nil {
 		return nil, err

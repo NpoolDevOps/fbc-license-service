@@ -12,6 +12,7 @@ import (
 	"github.com/google/uuid"
 	"io/ioutil"
 	"net/http"
+	"time"
 )
 
 type PairedCrypto struct {
@@ -87,7 +88,7 @@ func (s *AuthServer) Run() error {
 		Location: types.LoginAPI,
 		Method:   "POST",
 		Handler: func(w http.ResponseWriter, req *http.Request) (interface{}, string, int) {
-			return s.StartUpRequest(w, req)
+			return s.LoginRequest(w, req)
 		},
 	})
 
@@ -111,28 +112,86 @@ func (s *AuthServer) ExchangeKeyRequest(w http.ResponseWriter, req *http.Request
 		return nil, err.Error(), -1
 	}
 
-	var exchangeKeyInput types.ExchangeKeyInput
-	err = json.Unmarshal(b, &exchangeKeyInput)
+	var input types.ExchangeKeyInput
+	err = json.Unmarshal(b, &input)
 	if err != nil {
-		log.Errorf(log.Fields{}, "fail to parse input paramster: %v [%v]", err, string(b))
+		log.Errorf(log.Fields{}, "fail to parse input parameter: %v [%v]", err, string(b))
 		return nil, err.Error(), -2
 	}
 
 	sessionId := uuid.New()
 
 	s.clientCrypto[sessionId] = PairedCrypto{
-		RemoteRsa: crypto.NewRsaCryptoWithParam([]byte(exchangeKeyInput.PublicKey), nil),
+		RemoteRsa: crypto.NewRsaCryptoWithParam([]byte(input.PublicKey), nil),
 		LocalRsa:  crypto.NewRsaCrypto(1024),
 	}
 
+	myPubKey := string(s.clientCrypto[sessionId].LocalRsa.GetPubkey())
+	err = s.redisClient.InsertKeyInfo("session", sessionId,
+		fbcredis.SessionInfo{
+			MyPubKey:     myPubKey,
+			ClientPubKey: input.PublicKey,
+		}, 24*100000*time.Hour)
+	if err != nil {
+		log.Errorf(log.Fields{}, "fail to insert session info: %v", err)
+		return nil, err.Error(), -3
+	}
+
 	return types.ExchangeKeyOutput{
-		PublicKey: string(s.clientCrypto[sessionId].LocalRsa.GetPubkey()),
+		PublicKey: myPubKey,
 		SessionId: sessionId,
 	}, "", 0
 }
 
-func (s *AuthServer) StartUpRequest(w http.ResponseWriter, req *http.Request) (interface{}, string, int) {
-	return nil, "", 0
+func (s *AuthServer) LoginRequest(w http.ResponseWriter, req *http.Request) (interface{}, string, int) {
+	b, _ := ioutil.ReadAll(req.Body)
+
+	var input = types.ClientLoginInput{}
+	err := json.Unmarshal(b, &input)
+	if err != nil {
+		log.Errorf(log.Fields{}, "fail to parse input parameter: %v [%v]", err, string(b))
+		return nil, err.Error(), -1
+	}
+
+	if _, ok := s.clientCrypto[input.SessionId]; !ok {
+		log.Errorf(log.Fields{}, "invalid session id: %v", input.SessionId)
+		return nil, "invalid session id", -2
+	}
+
+	_, err = s.redisClient.QuerySession(input.SessionId)
+	if err != nil {
+		log.Errorf(log.Fields{}, "fail to query session: %v", err)
+		return nil, err.Error(), -3
+	}
+
+	_, err = s.mysqlClient.QueryUserInfo(input.ClientUser)
+	if err != nil {
+		log.Errorf(log.Fields{}, "fail to find client user: %v", err)
+		return nil, err.Error(), -4
+	}
+
+	clientInfo, err := s.mysqlClient.QueryClientInfoByClientSn(input.ClientSN)
+	if err != nil {
+		clientInfo = &fbcmysql.ClientInfo{
+			Id:         uuid.New(),
+			ClientUser: input.ClientUser,
+			ClientSn:   input.ClientSN,
+			Status:     "online",
+			CreateTime: time.Now(),
+			ModifyTime: time.Now(),
+		}
+		err = s.mysqlClient.InsertClientInfo(*clientInfo)
+		if err != nil {
+			log.Errorf(log.Fields{}, "fail to insert client info: %v", err)
+			return nil, err.Error(), -5
+		}
+	}
+
+	s.redisClient.InsertKeyInfo("client", clientInfo.Id, clientInfo, 24*100000*time.Hour)
+
+	return types.ClientLoginOutput{
+		ClientUuid: clientInfo.Id,
+	}, "", 0
 }
 
 func (s *AuthServer) HeartbeatRequest(w http.ResponseWriter, req *http.Request) (interface{}, string, int) {

@@ -3,8 +3,10 @@ package fbcmysql
 import (
 	"fmt"
 	log "github.com/EntropyPool/entropy-logger"
+	"github.com/google/uuid"
 	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/mysql"
+	"golang.org/x/xerrors"
 	"time"
 )
 
@@ -47,58 +49,85 @@ func (cli *MysqlCli) Delete() {
 }
 
 type UserInfo struct {
-	Id           string    `gorm:"column:id;primary_key"`
+	Id           uuid.UUID `gorm:"column:id;primary_key"`
 	UserName     string    `gorm:"column:user_name"`
 	ValidateDate time.Time `gorm:"column:validate_date"`
-	Volume       int       `gorm:"column:volume"`
-	Sn           string    `gorm:"column:sn"`
+	Quota        int       `gorm:"column:quota"`
+	Count        int       `gorm:"column:count"`
 	CreateTime   time.Time `gorm:"column:create_time"`
 	ModifyTime   time.Time `gorm:"column:modify_time"`
 }
 
-func (cli *MysqlCli) QueryUserInfoBySn(db *gorm.DB, softwareSn string) *UserInfo {
-	var userInfo UserInfo
+func (cli *MysqlCli) QueryUserInfo(user string) (*UserInfo, error) {
+	var info UserInfo
 	var count int
 
-	db.Where("sn = ?", softwareSn).Find(&userInfo).Count(&count)
+	cli.db.Where("username = ?", user).Find(&info).Count(&count)
 	if count == 0 {
-		return nil
+		return nil, xerrors.Errorf("cannot find any value")
 	}
 
-	return &userInfo
+	return &info, nil
+}
+
+type StatusInfo struct {
+	Id       string `gorm:"column:id;primary_key"`
+	StatText string `gorm:"column:status_text"`
+}
+
+func (cli *MysqlCli) QueryStatusInfo(status string) (*StatusInfo, error) {
+	var info StatusInfo
+	var count int
+
+	cli.db.Where("status_text = ?", status).Find(&info).Count(&count)
+	if count == 0 {
+		return nil, xerrors.Errorf("cannot find any value")
+	}
+
+	return &info, nil
 }
 
 type ClientInfo struct {
-	Id           string    `gorm:"column:id;primary_key"`
-	ClientSn     string    `gorm:"column:software_sn"`
-	SystemSn     string    `gorm:"column:system_sn"`
-	Status       int       `gorm:"column:status"`
-	DevopsStatus int       `gorm:"column:devops_status"`
-	CreateTime   time.Time `gorm:"column:create_time"`
-	ModifyTime   time.Time `gorm:"column:modify_time"`
+	Id         uuid.UUID `gorm:"column:id;primary_key"`
+	ClientUser string    `gorm:"column:client_user"`
+	ClientSn   string    `gorm:"column:client_sn"`
+	Status     string    `gorm:"column:status"`
+	CreateTime time.Time `gorm:"column:create_time"`
+	ModifyTime time.Time `gorm:"column:modify_time"`
 }
 
-func (cli *MysqlCli) InsertClientInfo(info ClientInfo) {
-	cli.db.Create(&info)
+func (cli *MysqlCli) InsertClientInfo(info ClientInfo) error {
+	_, err := cli.QueryUserInfo(info.ClientUser)
+	if err != nil {
+		return err
+	}
+
+	_, err = cli.QueryStatusInfo(info.Status)
+	if err != nil {
+		return err
+	}
+
+	rc := cli.db.Create(&info)
+	return rc.Error
 }
 
-func (cli *MysqlCli) QueryClientInfoBySystemSn(sn string) *ClientInfo {
+func (cli *MysqlCli) QueryClientInfoByClientSn(sn string) (*ClientInfo, error) {
 	var info ClientInfo
 	var count int
 
-	cli.db.Where("system_sn = ?", sn).Find(&info).Count(&count)
+	cli.db.Where("client_sn = ?", sn).Find(&info).Count(&count)
 	if count == 0 {
-		return nil
+		return nil, xerrors.Errorf("cannot find client")
 	}
 
-	return &info
+	return &info, nil
 }
 
-func (cli *MysqlCli) GetClientCount(sn string) int {
+func (cli *MysqlCli) QueryClientCount(user string) int {
 	var infos []ClientInfo
 	var count int
 
-	cli.db.Where("software_sn = ?", sn).Find(&infos).Count(&count)
+	cli.db.Where("client_user = ?", user).Find(&infos).Count(&count)
 
 	return count
 }
@@ -111,11 +140,11 @@ func (cli *MysqlCli) QueryClientInfos() []ClientInfo {
 	return infos
 }
 
-func (cli *MysqlCli) GetSoftwareDevopsStatus(uuid string) *ClientInfo {
+func (cli *MysqlCli) QueryClientStatus(id uuid.UUID) *ClientInfo {
 	var info ClientInfo
 	var count int
 
-	cli.db.Where("id=?", uuid).Find(&info).Count(&count)
+	cli.db.Where("id = ?", id).Find(&info).Count(&count)
 	if count == 0 {
 		return nil
 	}
