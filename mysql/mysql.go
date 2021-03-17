@@ -23,6 +23,13 @@ type MysqlCli struct {
 	db     *gorm.DB
 }
 
+const (
+	StatusOnline      = "online"
+	StatusOffline     = "offline"
+	StatusMaintaining = "maintaining"
+	StatusDisable     = "disable"
+)
+
 func NewMysqlCli(config MysqlConfig) *MysqlCli {
 	cli := &MysqlCli{
 		config: config,

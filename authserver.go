@@ -154,6 +154,8 @@ func (s *AuthServer) LoginRequest(w http.ResponseWriter, req *http.Request) (int
 		return nil, err.Error(), -1
 	}
 
+	log.Infof(log.Fields{}, "login request from %v", input.ClientUser)
+
 	if _, ok := s.clientCrypto[input.SessionId]; !ok {
 		log.Errorf(log.Fields{}, "invalid session id: %v", input.SessionId)
 		return nil, "invalid session id", -2
@@ -224,7 +226,7 @@ func (s *AuthServer) HeartbeatRequest(w http.ResponseWriter, req *http.Request) 
 
 	shouldStop := false
 	switch clientInfo.Status {
-	case "maintaining":
+	case fbcmysql.StatusDisable:
 		shouldStop = true
 	}
 
