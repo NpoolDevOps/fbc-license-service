@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	log "github.com/EntropyPool/entropy-logger"
+	etcdcli "github.com/NpoolDevOps/fbc-license-service/etcdcli"
 	"github.com/go-redis/redis"
 	"github.com/google/uuid"
 	"time"
@@ -24,8 +25,20 @@ func NewRedisCli(config RedisConfig) *RedisCli {
 		config: config,
 	}
 
+	var myConfig RedisConfig
+
+	resp, err := etcdcli.Get(config.Host)
+	if err == nil {
+		err = json.Unmarshal([]byte(resp), &myConfig)
+		if err == nil {
+			cli = &RedisCli{
+				config: myConfig,
+			}
+		}
+	}
+
 	client := redis.NewClient(&redis.Options{
-		Addr: config.Host,
+		Addr: cli.config.Host,
 		DB:   0,
 	})
 
