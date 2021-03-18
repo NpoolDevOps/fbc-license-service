@@ -1,33 +1,47 @@
 package etcdcli
 
 import (
+	"context"
 	"fmt"
 	log "github.com/EntropyPool/entropy-logger"
 	types "github.com/NpoolDevOps/fbc-license-service/types"
-	"github.com/coreos/go-etcd/etcd"
+	"github.com/coreos/etcd/clientv3"
 	"golang.org/x/xerrors"
 	"os"
+	"time"
 )
 
-func Get(key string) ([]byte, error) {
+func Get(key string) ([][]byte, error) {
 	etcdHost := types.EtcdHost
 	env, ok := os.LookupEnv("ETCD_HOST_TEST")
 	if ok {
 		etcdHost = env
 	}
 
-	etcdCli := etcd.NewClient([]string{etcdHost})
-
-	resp, err := etcdCli.Get(fmt.Sprintf("root/%v", key), true, true)
+	etcdCli, err := clientv3.New(clientv3.Config{
+		Endpoints: []string{etcdHost},
+	})
 	if err != nil {
-		log.Errorf(log.Fields{}, "cannot get '%v' from %v", key, types.EtcdHost)
 		return nil, err
 	}
 
-	if resp.Node == nil {
-		log.Errorf(log.Fields{}, "no response '%v' from %v", key, types.EtcdHost)
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	resp, err := etcdCli.Get(ctx, fmt.Sprintf("root/%v", key))
+	if err != nil {
+		log.Errorf(log.Fields{}, "cannot get '%v' from %v", key, etcdHost)
+		return nil, err
+	}
+
+	vals := [][]byte{}
+	for _, ev := range resp.Kvs {
+		vals = append(vals, ev.Value)
+	}
+
+	if len(vals) == 0 {
 		return nil, xerrors.Errorf("empty response from etcd")
 	}
 
-	return []byte(resp.Node.Value), nil
+	return vals, nil
 }

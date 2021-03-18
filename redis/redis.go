@@ -29,7 +29,7 @@ func NewRedisCli(config RedisConfig) *RedisCli {
 
 	resp, err := etcdcli.Get(config.Host)
 	if err == nil {
-		err = json.Unmarshal([]byte(resp), &myConfig)
+		err = json.Unmarshal(resp[0], &myConfig)
 		if err == nil {
 			cli = &RedisCli{
 				config: myConfig,

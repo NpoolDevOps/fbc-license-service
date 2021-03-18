@@ -43,7 +43,7 @@ func NewMysqlCli(config MysqlConfig) *MysqlCli {
 
 	resp, err := etcdcli.Get(config.Host)
 	if err == nil {
-		err = json.Unmarshal(resp, &myConfig)
+		err = json.Unmarshal(resp[0], &myConfig)
 		if err == nil {
 			myConfig.DbName = config.DbName
 			cli = &MysqlCli{
