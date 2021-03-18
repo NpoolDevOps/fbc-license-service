@@ -6,10 +6,17 @@ import (
 	types "github.com/NpoolDevOps/fbc-license-service/types"
 	"github.com/coreos/go-etcd/etcd"
 	"golang.org/x/xerrors"
+	"os"
 )
 
 func Get(key string) ([]byte, error) {
-	etcdCli := etcd.NewClient([]string{types.EtcdHost})
+	etcdHost := types.EtcdHost
+	env, ok := os.LookupEnv("ETCD_HOST_TEST")
+	if ok {
+		etcdHost = env
+	}
+
+	etcdCli := etcd.NewClient([]string{etcdHost})
 
 	resp, err := etcdCli.Get(fmt.Sprintf("root/%v", key), true, true)
 	if err != nil {
