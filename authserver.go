@@ -4,6 +4,8 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	log "github.com/EntropyPool/entropy-logger"
+	authapi "github.com/NpoolDevOps/fbc-auth-service/authapi"
+	authtypes "github.com/NpoolDevOps/fbc-auth-service/types"
 	"github.com/NpoolDevOps/fbc-license-service/crypto"
 	fbclib "github.com/NpoolDevOps/fbc-license-service/library"
 	fbcmysql "github.com/NpoolDevOps/fbc-license-service/mysql"
@@ -155,23 +157,32 @@ func (s *AuthServer) LoginRequest(w http.ResponseWriter, req *http.Request) (int
 	}
 
 	log.Infof(log.Fields{}, "login request from %v", input.ClientUser)
-	// Check user info in auth service firstly
+	myAppId := uuid.MustParse("00000001-0001-0001-0001-000000000001")
+	_, err = authapi.Login(authtypes.UserLoginInput{
+		Username: input.ClientUser,
+		Password: input.ClientPasswd,
+		AppId:    myAppId,
+	})
+	if err != nil {
+		log.Errorf(log.Fields{}, "fail to login")
+		return nil, err.Error(), -2
+	}
 
 	if _, ok := s.clientCrypto[input.SessionId]; !ok {
 		log.Errorf(log.Fields{}, "invalid session id: %v", input.SessionId)
-		return nil, "invalid session id", -2
+		return nil, "invalid session id", -3
 	}
 
 	_, err = s.redisClient.QuerySession(input.SessionId)
 	if err != nil {
 		log.Errorf(log.Fields{}, "fail to query session: %v", err)
-		return nil, err.Error(), -3
+		return nil, err.Error(), -4
 	}
 
 	_, err = s.mysqlClient.QueryUserInfo(input.ClientUser)
 	if err != nil {
 		log.Errorf(log.Fields{}, "fail to find client user: %v", err)
-		return nil, err.Error(), -4
+		return nil, err.Error(), -5
 	}
 
 	clientInfo, err := s.mysqlClient.QueryClientInfoByClientSn(input.ClientSN)
@@ -187,7 +198,7 @@ func (s *AuthServer) LoginRequest(w http.ResponseWriter, req *http.Request) (int
 		err = s.mysqlClient.InsertClientInfo(*clientInfo)
 		if err != nil {
 			log.Errorf(log.Fields{}, "fail to insert client info: %v", err)
-			return nil, err.Error(), -5
+			return nil, err.Error(), -6
 		}
 	}
 

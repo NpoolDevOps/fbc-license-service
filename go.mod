@@ -4,6 +4,7 @@ go 1.15
 
 require (
 	github.com/EntropyPool/entropy-logger v0.0.0-20210210082337-af230fd03ce7
+	github.com/NpoolDevOps/fbc-auth-service v0.0.0-20210319111238-cce28019e201
 	github.com/NpoolRD/http-daemon v0.0.0-20210210091512-241ac31803ef
 	github.com/coreos/etcd v3.3.25+incompatible
 	github.com/coreos/go-semver v0.3.0 // indirect
@@ -14,7 +15,7 @@ require (
 	github.com/golang/protobuf v1.5.1 // indirect
 	github.com/google/uuid v1.2.0
 	github.com/jinzhu/gorm v1.9.16
-	github.com/urfave/cli/v2 v2.3.0 // indirect
+	github.com/urfave/cli/v2 v2.3.0
 	go.uber.org/zap v1.16.0 // indirect
 	golang.org/x/xerrors v0.0.0-20200804184101-5ec99f83aff1
 	google.golang.org/genproto v0.0.0-20210317182105-75c7a8546eb9 // indirect
