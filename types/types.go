@@ -19,8 +19,9 @@ type CommonInput struct {
 
 type ClientLoginInput struct {
 	CommonInput
-	ClientUser string `json:"client_user"`
-	ClientSN   string `json:"client_sn"`
+	ClientUser   string `json:"client_user"`
+	ClientPasswd string `json:"client_passwd"`
+	ClientSN     string `json:"client_sn"`
 }
 
 type ClientLoginOutput struct {

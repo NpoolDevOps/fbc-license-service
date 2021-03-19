@@ -155,6 +155,7 @@ func (s *AuthServer) LoginRequest(w http.ResponseWriter, req *http.Request) (int
 	}
 
 	log.Infof(log.Fields{}, "login request from %v", input.ClientUser)
+	// Check user info in auth service firstly
 
 	if _, ok := s.clientCrypto[input.SessionId]; !ok {
 		log.Errorf(log.Fields{}, "invalid session id: %v", input.SessionId)
