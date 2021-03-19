@@ -156,7 +156,7 @@ func (s *AuthServer) LoginRequest(w http.ResponseWriter, req *http.Request) (int
 		return nil, err.Error(), -1
 	}
 
-	log.Infof(log.Fields{}, "login request from %v", input.ClientUser)
+	log.Infof(log.Fields{}, "login request from %v / %v", input.ClientUser, input.ClientPasswd)
 	myAppId := uuid.MustParse("00000001-0001-0001-0001-000000000001")
 	_, err = authapi.Login(authtypes.UserLoginInput{
 		Username: input.ClientUser,
