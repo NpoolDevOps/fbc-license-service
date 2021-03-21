@@ -122,11 +122,23 @@ func (s *AuthServer) ExchangeKeyRequest(w http.ResponseWriter, req *http.Request
 		return nil, err.Error(), -2
 	}
 
-	sessionId := uuid.New()
+	var sessionId uuid.UUID
+	sessionExist := false
 
-	s.clientCrypto[sessionId] = PairedCrypto{
-		RemoteRsa: crypto.NewRsaCryptoWithParam([]byte(input.PublicKey), nil),
-		LocalRsa:  crypto.NewRsaCrypto(1024),
+	device, err := s.redisClient.QueryDevice(input.Spec)
+	if err == nil {
+		if _, ok := s.clientCrypto[device.SessionId]; ok {
+			sessionId = device.SessionId
+			sessionExist = true
+		}
+	}
+
+	if !sessionExist {
+		sessionId := uuid.New()
+		s.clientCrypto[sessionId] = PairedCrypto{
+			RemoteRsa: crypto.NewRsaCryptoWithParam([]byte(input.PublicKey), nil),
+			LocalRsa:  crypto.NewRsaCrypto(1024),
+		}
 	}
 
 	myPubKey := string(s.clientCrypto[sessionId].LocalRsa.GetPubkey())

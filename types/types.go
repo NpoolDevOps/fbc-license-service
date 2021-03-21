@@ -5,6 +5,7 @@ import (
 )
 
 type ExchangeKeyInput struct {
+	Spec      string `json:"spec"`
 	PublicKey string `json:"public_key"`
 }
 

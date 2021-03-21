@@ -62,11 +62,6 @@ func NewRedisCli(config RedisConfig) *RedisCli {
 
 var redisKeyPrefix = "fbc:license:server:"
 
-type ClientInfo struct {
-	SessionId uuid.UUID
-	Id        uuid.UUID
-}
-
 func (cli *RedisCli) InsertKeyInfo(keyWord string, id uuid.UUID, info interface{}, ttl time.Duration) error {
 	b, err := json.Marshal(info)
 	if err != nil {
@@ -78,6 +73,29 @@ func (cli *RedisCli) InsertKeyInfo(keyWord string, id uuid.UUID, info interface{
 		return err
 	}
 	return nil
+}
+
+type DeviceInfo struct {
+	Spec      string
+	SessionId uuid.UUID
+}
+
+func (cli *RedisCli) QueryDevice(spec string) (*DeviceInfo, error) {
+	val, err := cli.client.Get(fmt.Sprintf("%v:device:%v", redisKeyPrefix, spec)).Result()
+	if err != nil {
+		return nil, err
+	}
+	info := &DeviceInfo{}
+	err = json.Unmarshal([]byte(val), info)
+	if err != nil {
+		return nil, err
+	}
+	return info, nil
+}
+
+type ClientInfo struct {
+	SessionId uuid.UUID
+	Id        uuid.UUID
 }
 
 func (cli *RedisCli) QueryClient(cid uuid.UUID) (*ClientInfo, error) {
