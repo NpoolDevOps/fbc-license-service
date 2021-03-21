@@ -122,6 +122,11 @@ func (s *AuthServer) ExchangeKeyRequest(w http.ResponseWriter, req *http.Request
 		return nil, err.Error(), -2
 	}
 
+	if input.Spec == "" {
+		log.Errorf(log.Fields{}, "device spec is must")
+		return nil, "device spec is must", -3
+	}
+
 	var sessionId uuid.UUID
 	sessionExist := false
 
@@ -149,7 +154,7 @@ func (s *AuthServer) ExchangeKeyRequest(w http.ResponseWriter, req *http.Request
 		}, 24*100000*time.Hour)
 	if err != nil {
 		log.Errorf(log.Fields{}, "fail to insert session info: %v", err)
-		return nil, err.Error(), -3
+		return nil, err.Error(), -4
 	}
 
 	return types.ExchangeKeyOutput{
