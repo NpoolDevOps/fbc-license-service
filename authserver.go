@@ -182,7 +182,7 @@ func (s *AuthServer) LoginRequest(w http.ResponseWriter, req *http.Request) (int
 		AppId:    myAppId,
 	})
 	if err != nil {
-		log.Errorf(log.Fields{}, "fail to login")
+		log.Errorf(log.Fields{}, "fail to login: %v", err)
 		return nil, err.Error(), -2
 	}
 
