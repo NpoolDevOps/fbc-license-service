@@ -139,7 +139,7 @@ func (s *AuthServer) ExchangeKeyRequest(w http.ResponseWriter, req *http.Request
 	}
 
 	if !sessionExist {
-		sessionId := uuid.New()
+		sessionId = uuid.New()
 		s.clientCrypto[sessionId] = PairedCrypto{
 			RemoteRsa: crypto.NewRsaCryptoWithParam([]byte(input.PublicKey), nil),
 			LocalRsa:  crypto.NewRsaCrypto(1024),
@@ -147,6 +147,7 @@ func (s *AuthServer) ExchangeKeyRequest(w http.ResponseWriter, req *http.Request
 	}
 
 	myPubKey := string(s.clientCrypto[sessionId].LocalRsa.GetPubkey())
+
 	err = s.redisClient.InsertKeyInfo("session", sessionId,
 		fbcredis.SessionInfo{
 			MyPubKey:     myPubKey,
