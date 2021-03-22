@@ -103,6 +103,14 @@ func (s *AuthServer) Run() error {
 		},
 	})
 
+	httpdaemon.RegisterRouter(httpdaemon.HttpRouter{
+		Location: types.MyClientsAPI,
+		Method:   "POST",
+		Handler: func(w http.ResponseWriter, req *http.Request) (interface{}, string, int) {
+			return s.MyClientsRequest(w, req)
+		},
+	})
+
 	log.Infof(log.Fields{}, "start http daemon at %v", s.config.Port)
 	httpdaemon.Run(s.config.Port)
 	return nil
@@ -197,7 +205,7 @@ func (s *AuthServer) LoginRequest(w http.ResponseWriter, req *http.Request) (int
 		return nil, err.Error(), -4
 	}
 
-	_, err = s.mysqlClient.QueryUserInfo(input.ClientUser)
+	_, err = s.mysqlClient.QueryUserInfoByUsername(input.ClientUser)
 	if err != nil {
 		log.Errorf(log.Fields{}, "fail to find client user: %v", err)
 		return nil, err.Error(), -5
@@ -205,7 +213,7 @@ func (s *AuthServer) LoginRequest(w http.ResponseWriter, req *http.Request) (int
 
 	clientInfo, err := s.mysqlClient.QueryClientInfoByClientSn(input.ClientSN)
 	if err != nil {
-		clientInfo = &fbcmysql.ClientInfo{
+		clientInfo = &types.ClientInfo{
 			Id:         uuid.New(),
 			ClientUser: input.ClientUser,
 			ClientSn:   input.ClientSN,
@@ -268,4 +276,47 @@ func (s *AuthServer) HeartbeatRequest(w http.ResponseWriter, req *http.Request) 
 	cipherText, _ := s.clientCrypto[input.SessionId].RemoteRsa.Encrypt(b)
 
 	return hex.EncodeToString(cipherText), "", 0
+}
+
+func (s *AuthServer) MyClientsRequest(w http.ResponseWriter, req *http.Request) (interface{}, string, int) {
+	b, err := ioutil.ReadAll(req.Body)
+	if err != nil {
+		return nil, err.Error(), -1
+	}
+
+	input := types.MyClientsInput{}
+	err = json.Unmarshal(b, &input)
+	if err != nil {
+		return nil, err.Error(), -2
+	}
+
+	if input.AuthCode == "" {
+		return nil, "auth code is must", -3
+	}
+
+	user, err := authapi.UserInfo(authtypes.UserInfoInput{
+		AuthCode: input.AuthCode,
+	})
+	if err != nil {
+		return nil, err.Error(), -4
+	}
+
+	clientUser, err := s.mysqlClient.QueryUserInfoById(user.Id)
+	if err != nil {
+		log.Errorf(log.Fields{}, "fail to find client user: %v", err)
+		return nil, err.Error(), -5
+	}
+
+	output := types.MyClientsOutput{
+		SuperUser:   user.SuperUser,
+		VisitorOnly: user.VisitorOnly,
+	}
+	if user.SuperUser {
+		output.Clients = s.mysqlClient.QueryClientInfos()
+		output.Users = s.mysqlClient.QueryUserInfos()
+	} else {
+		output.Clients = s.mysqlClient.QueryClientInfosByUser(clientUser.Username)
+	}
+
+	return output, "", 0
 }

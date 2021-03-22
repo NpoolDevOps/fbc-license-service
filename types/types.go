@@ -2,6 +2,7 @@ package types
 
 import (
 	"github.com/google/uuid"
+	"time"
 )
 
 type ExchangeKeyInput struct {
@@ -36,4 +37,34 @@ type HeartbeatInput struct {
 
 type HeartbeatOutput struct {
 	ShouldStop bool `json:"should_stop"`
+}
+
+type MyClientsInput struct {
+	AuthCode string `json:"auth_code"`
+}
+
+type ClientInfo struct {
+	Id         uuid.UUID `gorm:"column:id;primary_key" json:"id"`
+	ClientUser string    `gorm:"column:client_user" json:"client_user"`
+	ClientSn   string    `gorm:"column:client_sn" json:"client_sn"`
+	Status     string    `gorm:"column:status" json:"status"`
+	CreateTime time.Time `gorm:"column:create_time" json:"create_time"`
+	ModifyTime time.Time `gorm:"column:modify_time" json:"modify_time"`
+}
+
+type UserInfo struct {
+	Id           uuid.UUID `gorm:"column:id;primary_key" json:"id"`
+	Username     string    `gorm:"column:username" json:"username"`
+	ValidateDate time.Time `gorm:"column:validate_date" json:"validate_date"`
+	Quota        int       `gorm:"column:quota" json:"quota"`
+	Count        int       `gorm:"column:count" json:"count"`
+	CreateTime   time.Time `gorm:"column:create_time" json:"create_time"`
+	ModifyTime   time.Time `gorm:"column:modify_time" json:"modify_time"`
+}
+
+type MyClientsOutput struct {
+	SuperUser   bool         `json:"super_user"`
+	VisitorOnly bool         `json:"visitor_only"`
+	Users       []UserInfo   `json:"users"`
+	Clients     []ClientInfo `json:"clients"`
 }

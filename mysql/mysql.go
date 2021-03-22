@@ -5,11 +5,11 @@ import (
 	"fmt"
 	log "github.com/EntropyPool/entropy-logger"
 	etcdcli "github.com/NpoolDevOps/fbc-license-service/etcdcli"
+	types "github.com/NpoolDevOps/fbc-license-service/types"
 	"github.com/google/uuid"
 	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/mysql"
 	"golang.org/x/xerrors"
-	"time"
 )
 
 type MysqlConfig struct {
@@ -72,21 +72,23 @@ func (cli *MysqlCli) Delete() {
 	cli.db.Close()
 }
 
-type UserInfo struct {
-	Id           uuid.UUID `gorm:"column:id;primary_key"`
-	UserName     string    `gorm:"column:username"`
-	ValidateDate time.Time `gorm:"column:validate_date"`
-	Quota        int       `gorm:"column:quota"`
-	Count        int       `gorm:"column:count"`
-	CreateTime   time.Time `gorm:"column:create_time"`
-	ModifyTime   time.Time `gorm:"column:modify_time"`
-}
-
-func (cli *MysqlCli) QueryUserInfo(user string) (*UserInfo, error) {
-	var info UserInfo
+func (cli *MysqlCli) QueryUserInfoByUsername(user string) (*types.UserInfo, error) {
+	var info types.UserInfo
 	var count int
 
 	cli.db.Where("username = ?", user).Find(&info).Count(&count)
+	if count == 0 {
+		return nil, xerrors.Errorf("cannot find any value")
+	}
+
+	return &info, nil
+}
+
+func (cli *MysqlCli) QueryUserInfoById(uid uuid.UUID) (*types.UserInfo, error) {
+	var info types.UserInfo
+	var count int
+
+	cli.db.Where("id = ?", uid).Find(&info).Count(&count)
 	if count == 0 {
 		return nil, xerrors.Errorf("cannot find any value")
 	}
@@ -111,17 +113,8 @@ func (cli *MysqlCli) QueryStatusInfo(status string) (*StatusInfo, error) {
 	return &info, nil
 }
 
-type ClientInfo struct {
-	Id         uuid.UUID `gorm:"column:id;primary_key"`
-	ClientUser string    `gorm:"column:client_user"`
-	ClientSn   string    `gorm:"column:client_sn"`
-	Status     string    `gorm:"column:status"`
-	CreateTime time.Time `gorm:"column:create_time"`
-	ModifyTime time.Time `gorm:"column:modify_time"`
-}
-
-func (cli *MysqlCli) InsertClientInfo(info ClientInfo) error {
-	_, err := cli.QueryUserInfo(info.ClientUser)
+func (cli *MysqlCli) InsertClientInfo(info types.ClientInfo) error {
+	_, err := cli.QueryUserInfoByUsername(info.ClientUser)
 	if err != nil {
 		return err
 	}
@@ -135,8 +128,8 @@ func (cli *MysqlCli) InsertClientInfo(info ClientInfo) error {
 	return rc.Error
 }
 
-func (cli *MysqlCli) QueryClientInfoByClientSn(sn string) (*ClientInfo, error) {
-	var info ClientInfo
+func (cli *MysqlCli) QueryClientInfoByClientSn(sn string) (*types.ClientInfo, error) {
+	var info types.ClientInfo
 	var count int
 
 	cli.db.Where("client_sn = ?", sn).Find(&info).Count(&count)
@@ -147,8 +140,8 @@ func (cli *MysqlCli) QueryClientInfoByClientSn(sn string) (*ClientInfo, error) {
 	return &info, nil
 }
 
-func (cli *MysqlCli) QueryClientInfoByClientId(id uuid.UUID) (*ClientInfo, error) {
-	var info ClientInfo
+func (cli *MysqlCli) QueryClientInfoByClientId(id uuid.UUID) (*types.ClientInfo, error) {
+	var info types.ClientInfo
 	var count int
 
 	cli.db.Where("id = ?", id).Find(&info).Count(&count)
@@ -160,7 +153,7 @@ func (cli *MysqlCli) QueryClientInfoByClientId(id uuid.UUID) (*ClientInfo, error
 }
 
 func (cli *MysqlCli) QueryClientCount(user string) int {
-	var infos []ClientInfo
+	var infos []types.ClientInfo
 	var count int
 
 	cli.db.Where("client_user = ?", user).Find(&infos).Count(&count)
@@ -168,16 +161,37 @@ func (cli *MysqlCli) QueryClientCount(user string) int {
 	return count
 }
 
-func (cli *MysqlCli) QueryClientInfos() []ClientInfo {
-	var infos []ClientInfo
+func (cli *MysqlCli) QueryUserInfos() []types.UserInfo {
+	var infos []types.UserInfo
 
 	cli.db.Find(&infos)
 
 	return infos
 }
 
-func (cli *MysqlCli) QueryClientStatus(id uuid.UUID) *ClientInfo {
-	var info ClientInfo
+func (cli *MysqlCli) QueryClientInfos() []types.ClientInfo {
+	var infos []types.ClientInfo
+
+	cli.db.Find(&infos)
+
+	return infos
+}
+
+func (cli *MysqlCli) QueryClientInfosByUser(username string) []types.ClientInfo {
+	var infos []types.ClientInfo
+
+	var count = 0
+
+	cli.db.Where("client_user = ?", username).Find(&infos).Count(&count)
+	if count == 0 {
+		return nil
+	}
+
+	return infos
+}
+
+func (cli *MysqlCli) QueryClientStatus(id uuid.UUID) *types.ClientInfo {
+	var info types.ClientInfo
 	var count int
 
 	cli.db.Where("id = ?", id).Find(&info).Count(&count)

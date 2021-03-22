@@ -4,7 +4,7 @@ go 1.15
 
 require (
 	github.com/EntropyPool/entropy-logger v0.0.0-20210210082337-af230fd03ce7
-	github.com/NpoolDevOps/fbc-auth-service v0.0.0-20210319121457-54710063b31f
+	github.com/NpoolDevOps/fbc-auth-service v0.0.0-20210322083551-87bce58c4250
 	github.com/NpoolRD/http-daemon v0.0.0-20210210091512-241ac31803ef
 	github.com/coreos/etcd v3.3.25+incompatible
 	github.com/coreos/go-semver v0.3.0 // indirect
