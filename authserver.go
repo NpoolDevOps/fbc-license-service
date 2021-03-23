@@ -148,16 +148,16 @@ func (s *AuthServer) ExchangeKeyRequest(w http.ResponseWriter, req *http.Request
 		sessionId = uuid.New()
 		localRsa = crypto.NewRsaCrypto(1024)
 		myPubKey = string(localRsa.GetPubkey())
+	}
 
-		err = s.redisClient.InsertKeyInfo("session", sessionId,
-			fbcredis.SessionInfo{
-				MyPubKey:     myPubKey,
-				ClientPubKey: input.PublicKey,
-			}, 24*100000*time.Hour)
-		if err != nil {
-			log.Errorf(log.Fields{}, "fail to insert session info: %v", err)
-			return nil, err.Error(), -4
-		}
+	err = s.redisClient.InsertKeyInfo("session", sessionId,
+		fbcredis.SessionInfo{
+			MyPubKey:     myPubKey,
+			ClientPubKey: input.PublicKey,
+		}, 24*100000*time.Hour)
+	if err != nil {
+		log.Errorf(log.Fields{}, "fail to insert session info: %v", err)
+		return nil, err.Error(), -4
 	}
 
 	return types.ExchangeKeyOutput{
