@@ -353,7 +353,7 @@ func (s *AuthServer) UpdateAuthRequest(w http.ResponseWriter, req *http.Request)
 		return nil, err.Error(), -6
 	}
 
-	clientUser, err := s.mysqlClient.QueryUserInfoById(user.Id)
+	clientUser, err := s.mysqlClient.QueryUserInfoById(usernameInfo.Id)
 	if err != nil {
 		clientUser = &types.UserInfo{
 			Id:         usernameInfo.Id,
