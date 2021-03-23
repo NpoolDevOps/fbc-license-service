@@ -215,6 +215,10 @@ func (s *AuthServer) LoginRequest(w http.ResponseWriter, req *http.Request) (int
 			log.Errorf(log.Fields{}, "fail to insert client info: %v", err)
 			return nil, err.Error(), -6
 		}
+	} else {
+		if clientInfo.ClientUser != input.ClientUser {
+			return nil, "registered user and client report user is not equal", -7
+		}
 	}
 
 	s.redisClient.InsertKeyInfo("client", clientInfo.Id, clientInfo, 24*100000*time.Hour)
