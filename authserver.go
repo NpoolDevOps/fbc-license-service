@@ -18,11 +18,6 @@ import (
 	"time"
 )
 
-type PairedCrypto struct {
-	RemoteRsa *crypto.RsaCrypto
-	LocalRsa  *crypto.RsaCrypto
-}
-
 type AuthServerConfig struct {
 	RedisCfg fbcredis.RedisConfig `json:"redis"`
 	MysqlCfg fbcmysql.MysqlConfig `json:"mysql"`
@@ -30,11 +25,10 @@ type AuthServerConfig struct {
 }
 
 type AuthServer struct {
-	config       AuthServerConfig
-	authText     string
-	redisClient  *fbcredis.RedisCli
-	mysqlClient  *fbcmysql.MysqlCli
-	clientCrypto map[uuid.UUID]PairedCrypto
+	config      AuthServerConfig
+	authText    string
+	redisClient *fbcredis.RedisCli
+	mysqlClient *fbcmysql.MysqlCli
 }
 
 func NewAuthServer(configFile string) *AuthServer {
@@ -66,11 +60,10 @@ func NewAuthServer(configFile string) *AuthServer {
 	}
 
 	server := &AuthServer{
-		config:       config,
-		authText:     fbclib.FBCAuthText,
-		redisClient:  redisCli,
-		mysqlClient:  mysqlCli,
-		clientCrypto: make(map[uuid.UUID]PairedCrypto),
+		config:      config,
+		authText:    fbclib.FBCAuthText,
+		redisClient: redisCli,
+		mysqlClient: mysqlCli,
 	}
 
 	log.Infof(log.Fields{}, "successful to create auth server")
@@ -140,30 +133,31 @@ func (s *AuthServer) ExchangeKeyRequest(w http.ResponseWriter, req *http.Request
 
 	device, err := s.redisClient.QueryDevice(input.Spec)
 	if err == nil {
-		if _, ok := s.clientCrypto[device.SessionId]; ok {
-			sessionId = device.SessionId
-			sessionExist = true
+		sessionId = device.SessionId
+		_, err := s.redisClient.QuerySession(sessionId)
+		if err != nil {
+			return nil, err.Error(), -4
 		}
+		sessionExist = true
 	}
+
+	var localRsa *crypto.RsaCrypto
+	var myPubKey string
 
 	if !sessionExist {
 		sessionId = uuid.New()
-		s.clientCrypto[sessionId] = PairedCrypto{
-			RemoteRsa: crypto.NewRsaCryptoWithParam([]byte(input.PublicKey), nil),
-			LocalRsa:  crypto.NewRsaCrypto(1024),
+		localRsa = crypto.NewRsaCrypto(1024)
+		myPubKey = string(localRsa.GetPubkey())
+
+		err = s.redisClient.InsertKeyInfo("session", sessionId,
+			fbcredis.SessionInfo{
+				MyPubKey:     myPubKey,
+				ClientPubKey: input.PublicKey,
+			}, 24*100000*time.Hour)
+		if err != nil {
+			log.Errorf(log.Fields{}, "fail to insert session info: %v", err)
+			return nil, err.Error(), -4
 		}
-	}
-
-	myPubKey := string(s.clientCrypto[sessionId].LocalRsa.GetPubkey())
-
-	err = s.redisClient.InsertKeyInfo("session", sessionId,
-		fbcredis.SessionInfo{
-			MyPubKey:     myPubKey,
-			ClientPubKey: input.PublicKey,
-		}, 24*100000*time.Hour)
-	if err != nil {
-		log.Errorf(log.Fields{}, "fail to insert session info: %v", err)
-		return nil, err.Error(), -4
 	}
 
 	return types.ExchangeKeyOutput{
@@ -192,11 +186,6 @@ func (s *AuthServer) LoginRequest(w http.ResponseWriter, req *http.Request) (int
 	if err != nil {
 		log.Errorf(log.Fields{}, "fail to login: %v", err)
 		return nil, err.Error(), -2
-	}
-
-	if _, ok := s.clientCrypto[input.SessionId]; !ok {
-		log.Errorf(log.Fields{}, "invalid session id: %v", input.SessionId)
-		return nil, "invalid session id", -3
 	}
 
 	_, err = s.redisClient.QuerySession(input.SessionId)
@@ -245,12 +234,7 @@ func (s *AuthServer) HeartbeatRequest(w http.ResponseWriter, req *http.Request) 
 		return nil, err.Error(), -1
 	}
 
-	if _, ok := s.clientCrypto[input.SessionId]; !ok {
-		log.Errorf(log.Fields{}, "invalid session id: %v", input.SessionId)
-		return nil, "invalid session id", -2
-	}
-
-	_, err = s.redisClient.QuerySession(input.SessionId)
+	sessionInfo, err := s.redisClient.QuerySession(input.SessionId)
 	if err != nil {
 		log.Errorf(log.Fields{}, "fail to query session: %v", err)
 		return nil, err.Error(), -3
@@ -273,7 +257,8 @@ func (s *AuthServer) HeartbeatRequest(w http.ResponseWriter, req *http.Request) 
 	}
 
 	b, _ = json.Marshal(output)
-	cipherText, _ := s.clientCrypto[input.SessionId].RemoteRsa.Encrypt(b)
+	remoteRsa := crypto.NewRsaCryptoWithParam([]byte(sessionInfo.MyPubKey), nil)
+	cipherText, _ := remoteRsa.Encrypt(b)
 
 	return hex.EncodeToString(cipherText), "", 0
 }
