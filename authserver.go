@@ -104,6 +104,14 @@ func (s *AuthServer) Run() error {
 		},
 	})
 
+	httpdaemon.RegisterRouter(httpdaemon.HttpRouter{
+		Location: types.UpdateAuthAPI,
+		Method:   "POST",
+		Handler: func(w http.ResponseWriter, req *http.Request) (interface{}, string, int) {
+			return s.UpdateAuthRequest(w, req)
+		},
+	})
+
 	log.Infof(log.Fields{}, "start http daemon at %v", s.config.Port)
 	httpdaemon.Run(s.config.Port)
 	return nil
@@ -308,4 +316,60 @@ func (s *AuthServer) MyClientsRequest(w http.ResponseWriter, req *http.Request) 
 	}
 
 	return output, "", 0
+}
+
+func (s *AuthServer) UpdateAuthRequest(w http.ResponseWriter, req *http.Request) (interface{}, string, int) {
+	b, err := ioutil.ReadAll(req.Body)
+	if err != nil {
+		return nil, err.Error(), -1
+	}
+
+	input := types.UpdateAuthInput{}
+	err = json.Unmarshal(b, &input)
+	if err != nil {
+		return nil, err.Error(), -2
+	}
+
+	if input.AuthCode == "" {
+		return nil, "auth code is must", -3
+	}
+
+	user, err := authapi.UserInfo(authtypes.UserInfoInput{
+		AuthCode: input.AuthCode,
+	})
+	if err != nil {
+		return nil, err.Error(), -4
+	}
+
+	if !user.SuperUser {
+		return nil, "operation not allowed", -5
+	}
+
+	usernameInfo, err := authapi.UsernameInfo(authtypes.UsernameInfoInput{
+		AuthCode: input.AuthCode,
+		Username: input.Username,
+	})
+	if err != nil {
+		return nil, err.Error(), -6
+	}
+
+	clientUser, err := s.mysqlClient.QueryUserInfoById(user.Id)
+	if err != nil {
+		clientUser = &types.UserInfo{
+			Id:         usernameInfo.Id,
+			Username:   input.Username,
+			CreateTime: time.Now(),
+		}
+	}
+
+	clientUser.Quota = input.Quota
+	clientUser.ModifyTime = time.Now()
+	clientUser.ValidateDate = time.Now().AddDate(0, 0, input.ValidateDate)
+
+	err = s.mysqlClient.UpdateAuth(*clientUser)
+	if err != nil {
+		return nil, err.Error(), -6
+	}
+
+	return nil, "", 0
 }

@@ -201,3 +201,8 @@ func (cli *MysqlCli) QueryClientStatus(id uuid.UUID) *types.ClientInfo {
 
 	return &info
 }
+
+func (cli *MysqlCli) UpdateAuth(info types.UserInfo) error {
+	rc := cli.db.Save(&info)
+	return rc.Error
+}

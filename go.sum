@@ -5,6 +5,8 @@ github.com/NpoolDevOps/fbc-auth-service v0.0.0-20210319121457-54710063b31f h1:ge
 github.com/NpoolDevOps/fbc-auth-service v0.0.0-20210319121457-54710063b31f/go.mod h1:FSKZRNVwKw/DxbGgb+WB43H1seNTETTSNgOQDJZjeL0=
 github.com/NpoolDevOps/fbc-auth-service v0.0.0-20210322083551-87bce58c4250 h1:1GhJ6QT6Ib+sXoVsQGbzzUiCV/rtV6hdvQi2985k7AU=
 github.com/NpoolDevOps/fbc-auth-service v0.0.0-20210322083551-87bce58c4250/go.mod h1:3JA4mxc7e9f0dfcxT7WRKz+ASJb4tjcrcJ0rWmHRBUc=
+github.com/NpoolDevOps/fbc-auth-service v0.0.0-20210323131841-28695bb4b6a8 h1:0nXomfz8m9cMAMVe9AFE6ri10tjZUtW4w/JvAgA77xU=
+github.com/NpoolDevOps/fbc-auth-service v0.0.0-20210323131841-28695bb4b6a8/go.mod h1:3JA4mxc7e9f0dfcxT7WRKz+ASJb4tjcrcJ0rWmHRBUc=
 github.com/NpoolDevOps/fbc-devops-service v0.0.0-20210318090754-3e9f35202388/go.mod h1:cpRsY+DZ6TDTZrGCldMNcKP5u8AnIl4rbpykflkQUC8=
 github.com/NpoolDevOps/fbc-license-service v0.0.0-20210318060048-fc9b7662d874/go.mod h1:TDYLYEPoO/FIqhlUczeQccA1mMNMHR6BleISvTUCTxo=
 github.com/NpoolDevOps/fbc-license-service v0.0.0-20210319140422-63c83712a695/go.mod h1:mT8+Dx2KWEdqzTMFZol89yjl5RqZ+rbJdHZtvLAvlPo=

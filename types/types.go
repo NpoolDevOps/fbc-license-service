@@ -68,3 +68,10 @@ type MyClientsOutput struct {
 	Users       []UserInfo   `json:"users"`
 	Clients     []ClientInfo `json:"clients"`
 }
+
+type UpdateAuthInput struct {
+	AuthCode     string `json:"auth_code"`
+	Username     string `json:"username"`
+	Quota        int    `json:"quota"`
+	ValidateDate int    `json:"validate_time"`
+}
