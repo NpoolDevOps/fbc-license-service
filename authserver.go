@@ -219,12 +219,13 @@ func (s *AuthServer) LoginRequest(w http.ResponseWriter, req *http.Request) (int
 	clientInfo, err := s.mysqlClient.QueryClientInfoByClientSn(input.ClientSN)
 	if err != nil {
 		clientInfo = &types.ClientInfo{
-			Id:         uuid.New(),
-			ClientUser: input.ClientUser,
-			ClientSn:   input.ClientSN,
-			Status:     "online",
-			CreateTime: time.Now(),
-			ModifyTime: time.Now(),
+			Id:          uuid.New(),
+			ClientUser:  input.ClientUser,
+			ClientSn:    input.ClientSN,
+			NetworkType: input.NetworkType,
+			Status:      "online",
+			CreateTime:  time.Now(),
+			ModifyTime:  time.Now(),
 		}
 		err = s.mysqlClient.InsertClientInfo(*clientInfo)
 		if err != nil {

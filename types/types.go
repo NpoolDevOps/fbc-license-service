@@ -24,6 +24,7 @@ type ClientLoginInput struct {
 	ClientUser   string `json:"client_user"`
 	ClientPasswd string `json:"client_passwd"`
 	ClientSN     string `json:"client_sn"`
+	NetworkType  string `json:"network_type"`
 }
 
 type ClientLoginOutput struct {
@@ -46,12 +47,13 @@ type MyClientsInput struct {
 }
 
 type ClientInfo struct {
-	Id         uuid.UUID `gorm:"column:id;primary_key" json:"id"`
-	ClientUser string    `gorm:"column:client_user" json:"client_user"`
-	ClientSn   string    `gorm:"column:client_sn" json:"client_sn"`
-	Status     string    `gorm:"column:status" json:"status"`
-	CreateTime time.Time `gorm:"column:create_time" json:"create_time"`
-	ModifyTime time.Time `gorm:"column:modify_time" json:"modify_time"`
+	Id          uuid.UUID `gorm:"column:id;primary_key" json:"id"`
+	ClientUser  string    `gorm:"column:client_user" json:"client_user"`
+	ClientSn    string    `gorm:"column:client_sn" json:"client_sn"`
+	Status      string    `gorm:"column:status" json:"status"`
+	CreateTime  time.Time `gorm:"column:create_time" json:"create_time"`
+	ModifyTime  time.Time `gorm:"column:modify_time" json:"modify_time"`
+	NetworkType string    `json:"network_type"`
 }
 
 type UserInfo struct {
