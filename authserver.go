@@ -238,6 +238,7 @@ func (s *AuthServer) LoginRequest(w http.ResponseWriter, req *http.Request) (int
 		}
 	}
 
+	clientInfo.NetworkType = input.NetworkType
 	s.redisClient.InsertKeyInfo("client", clientInfo.Id, clientInfo, 2*time.Hour)
 
 	return types.ClientLoginOutput{
