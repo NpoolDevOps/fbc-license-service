@@ -39,6 +39,8 @@ type HeartbeatOutput struct {
 	ShouldStop bool `json:"should_stop"`
 }
 
+type HeartbeatV1Output HeartbeatOutput
+
 type MyClientsInput struct {
 	AuthCode string `json:"auth_code"`
 }

@@ -97,6 +97,14 @@ func (s *AuthServer) Run() error {
 	})
 
 	httpdaemon.RegisterRouter(httpdaemon.HttpRouter{
+		Location: types.HeartbeatV1API,
+		Method:   "POST",
+		Handler: func(w http.ResponseWriter, req *http.Request) (interface{}, string, int) {
+			return s.HeartbeatV1Request(w, req)
+		},
+	})
+
+	httpdaemon.RegisterRouter(httpdaemon.HttpRouter{
 		Location: types.MyClientsAPI,
 		Method:   "POST",
 		Handler: func(w http.ResponseWriter, req *http.Request) (interface{}, string, int) {
@@ -236,26 +244,26 @@ func (s *AuthServer) LoginRequest(w http.ResponseWriter, req *http.Request) (int
 	}, "", 0
 }
 
-func (s *AuthServer) HeartbeatRequest(w http.ResponseWriter, req *http.Request) (interface{}, string, int) {
+func (s *AuthServer) heartbeatRequest(w http.ResponseWriter, req *http.Request) ([]byte, interface{}, string, int) {
 	b, _ := ioutil.ReadAll(req.Body)
 
 	var input = types.HeartbeatInput{}
 	err := json.Unmarshal(b, &input)
 	if err != nil {
 		log.Errorf(log.Fields{}, "fail to parse input parameter: %v [%v]", err, string(b))
-		return nil, err.Error(), -1
+		return nil, nil, err.Error(), -1
 	}
 
 	sessionInfo, err := s.redisClient.QuerySession(input.SessionId)
 	if err != nil {
 		log.Errorf(log.Fields{}, "fail to query session: %v", err)
-		return nil, err.Error(), -3
+		return nil, nil, err.Error(), -3
 	}
 
 	clientInfo, err := s.mysqlClient.QueryClientInfoByClientId(input.ClientUuid)
 	if err != nil {
 		log.Errorf(log.Fields{}, "fail to find client info: %v", err)
-		return nil, err.Error(), -4
+		return nil, nil, err.Error(), -4
 	}
 
 	shouldStop := false
@@ -268,11 +276,25 @@ func (s *AuthServer) HeartbeatRequest(w http.ResponseWriter, req *http.Request) 
 		ShouldStop: shouldStop,
 	}
 
-	b, _ = json.Marshal(output)
-	remoteRsa := crypto.NewRsaCryptoWithParam([]byte(sessionInfo.MyPubKey), nil)
+	return []byte(sessionInfo.MyPubKey), output, "", 0
+}
+
+func (s *AuthServer) HeartbeatRequest(w http.ResponseWriter, req *http.Request) (interface{}, string, int) {
+	pubKey, output, msg, code := s.heartbeatRequest(w, req)
+	if code != 0 {
+		return nil, msg, code
+	}
+
+	b, _ := json.Marshal(output)
+	remoteRsa := crypto.NewRsaCryptoWithParam([]byte(pubKey), nil)
 	cipherText, _ := remoteRsa.Encrypt(b)
 
 	return hex.EncodeToString(cipherText), "", 0
+}
+
+func (s *AuthServer) HeartbeatV1Request(w http.ResponseWriter, req *http.Request) (interface{}, string, int) {
+	_, output, msg, code := s.heartbeatRequest(w, req)
+	return output, msg, code
 }
 
 func (s *AuthServer) MyClientsRequest(w http.ResponseWriter, req *http.Request) (interface{}, string, int) {
