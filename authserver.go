@@ -343,10 +343,8 @@ func (s *AuthServer) MyClientsRequest(w http.ResponseWriter, req *http.Request) 
 	for _, client := range output.Clients {
 		expire, err := s.redisClient.QueryClientExpire(client.Id)
 		if err != nil {
-			log.Errorf(log.Fields{}, "fail to find client info: %v", err)
-			return nil, err.Error(), -6
-		}
-		if expire {
+			client.Status = fbcmysql.StatusDisable
+		} else if expire {
 			if client.Status == fbcmysql.StatusOnline {
 				client.Status = fbcmysql.StatusOffline
 			}
