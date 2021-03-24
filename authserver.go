@@ -340,13 +340,13 @@ func (s *AuthServer) MyClientsRequest(w http.ResponseWriter, req *http.Request) 
 		output.Clients = s.mysqlClient.QueryClientInfosByUser(clientUser.Username)
 	}
 
-	for _, client := range output.Clients {
+	for i, client := range output.Clients {
 		expire, err := s.redisClient.QueryClientExpire(client.Id)
 		if err != nil {
-			client.Status = fbcmysql.StatusDisable
+			output.Clients[i].Status = fbcmysql.StatusDisable
 		} else if expire {
 			if client.Status == fbcmysql.StatusOnline {
-				client.Status = fbcmysql.StatusOffline
+				output.Clients[i].Status = fbcmysql.StatusOffline
 			}
 		}
 	}
