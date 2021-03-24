@@ -351,6 +351,10 @@ func (s *AuthServer) MyClientsRequest(w http.ResponseWriter, req *http.Request) 
 				output.Clients[i].Status = fbcmysql.StatusOffline
 			}
 		}
+		info, err := s.redisClient.QueryClient(client.Id)
+		if err == nil {
+			output.Clients[i].NetworkType = info.NetworkType
+		}
 	}
 
 	return output, "", 0

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	log "github.com/EntropyPool/entropy-logger"
 	etcdcli "github.com/NpoolDevOps/fbc-license-service/etcdcli"
+	types "github.com/NpoolDevOps/fbc-license-service/types"
 	"github.com/go-redis/redis"
 	"github.com/google/uuid"
 	"golang.org/x/xerrors"
@@ -94,17 +95,12 @@ func (cli *RedisCli) QueryDevice(spec string) (*DeviceInfo, error) {
 	return info, nil
 }
 
-type ClientInfo struct {
-	SessionId uuid.UUID
-	Id        uuid.UUID
-}
-
-func (cli *RedisCli) QueryClient(cid uuid.UUID) (*ClientInfo, error) {
+func (cli *RedisCli) QueryClient(cid uuid.UUID) (*types.ClientInfo, error) {
 	val, err := cli.client.Get(fmt.Sprintf("%v:client:%v", redisKeyPrefix, cid)).Result()
 	if err != nil {
 		return nil, err
 	}
-	info := &ClientInfo{}
+	info := &types.ClientInfo{}
 	err = json.Unmarshal([]byte(val), info)
 	if err != nil {
 		return nil, err
