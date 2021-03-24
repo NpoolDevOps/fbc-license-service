@@ -120,6 +120,14 @@ func (s *AuthServer) Run() error {
 		},
 	})
 
+	httpdaemon.RegisterRouter(httpdaemon.HttpRouter{
+		Location: types.ClientInfoAPI,
+		Method:   "POST",
+		Handler: func(w http.ResponseWriter, req *http.Request) (interface{}, string, int) {
+			return s.ClientInfoRequest(w, req)
+		},
+	})
+
 	log.Infof(log.Fields{}, "start http daemon at %v", s.config.Port)
 	httpdaemon.Run(s.config.Port)
 	return nil
@@ -421,4 +429,25 @@ func (s *AuthServer) UpdateAuthRequest(w http.ResponseWriter, req *http.Request)
 	}
 
 	return nil, "", 0
+}
+
+func (s *AuthServer) ClientInfoRequest(w http.ResponseWriter, req *http.Request) (interface{}, string, int) {
+	b, err := ioutil.ReadAll(req.Body)
+	if err != nil {
+		return nil, err.Error(), -1
+	}
+
+	input := types.ClientInfoInput{}
+	err = json.Unmarshal(b, &input)
+	if err != nil {
+		return nil, err.Error(), -2
+	}
+
+	clientInfo, err := s.mysqlClient.QueryClientInfoByClientId(input.Id)
+	if err != nil {
+		log.Errorf(log.Fields{}, "fail to find client info: %v", err)
+		return nil, err.Error(), -3
+	}
+
+	return clientInfo, "", 0
 }

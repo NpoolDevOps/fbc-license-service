@@ -79,3 +79,9 @@ type UpdateAuthInput struct {
 	Quota        int    `json:"quota"`
 	ValidateDate int    `json:"validate_time"`
 }
+
+type ClientInfoInput struct {
+	Id uuid.UUID `json:"id"`
+}
+
+type ClientInfoOutput = ClientInfo
