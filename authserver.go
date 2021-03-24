@@ -238,7 +238,7 @@ func (s *AuthServer) LoginRequest(w http.ResponseWriter, req *http.Request) (int
 		}
 	}
 
-	s.redisClient.InsertKeyInfo("client", clientInfo.Id, clientInfo, 24*100000*time.Hour)
+	s.redisClient.InsertKeyInfo("client", clientInfo.Id, clientInfo, 2*time.Hour)
 
 	return types.ClientLoginOutput{
 		ClientUuid: clientInfo.Id,
@@ -266,6 +266,8 @@ func (s *AuthServer) heartbeatRequest(w http.ResponseWriter, req *http.Request) 
 		log.Errorf(log.Fields{}, "fail to find client info: %v", err)
 		return nil, nil, err.Error(), -4
 	}
+
+	s.redisClient.InsertKeyInfo("client", clientInfo.Id, clientInfo, 2*time.Hour)
 
 	shouldStop := false
 	switch clientInfo.Status {
@@ -336,6 +338,19 @@ func (s *AuthServer) MyClientsRequest(w http.ResponseWriter, req *http.Request) 
 		output.Users = s.mysqlClient.QueryUserInfos()
 	} else {
 		output.Clients = s.mysqlClient.QueryClientInfosByUser(clientUser.Username)
+	}
+
+	for _, client := range output.Clients {
+		expire, err := s.redisClient.QueryClientExpire(client.Id)
+		if err != nil {
+			log.Errorf(log.Fields{}, "fail to find client info: %v", err)
+			return nil, err.Error(), -6
+		}
+		if expire {
+			if client.Status == fbcmysql.StatusOnline {
+				client.Status = fbcmysql.StatusOffline
+			}
+		}
 	}
 
 	return output, "", 0

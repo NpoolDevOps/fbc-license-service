@@ -7,6 +7,7 @@ import (
 	etcdcli "github.com/NpoolDevOps/fbc-license-service/etcdcli"
 	"github.com/go-redis/redis"
 	"github.com/google/uuid"
+	"golang.org/x/xerrors"
 	"time"
 )
 
@@ -109,6 +110,24 @@ func (cli *RedisCli) QueryClient(cid uuid.UUID) (*ClientInfo, error) {
 		return nil, err
 	}
 	return info, nil
+}
+
+func (cli *RedisCli) QueryClientExpire(cid uuid.UUID) (bool, error) {
+	ttl, err := cli.client.TTL(fmt.Sprintf("%v:client:%v", redisKeyPrefix, cid)).Result()
+	if err != nil {
+		return true, err
+	}
+	switch ttl.Seconds() {
+	case -1:
+		return false, nil
+	case -2:
+		return true, xerrors.Errorf("key is missed")
+	default:
+		if ttl < 0 {
+			return true, nil
+		}
+	}
+	return false, nil
 }
 
 type SessionInfo struct {
