@@ -268,6 +268,13 @@ func (s *AuthServer) heartbeatRequest(w http.ResponseWriter, req *http.Request) 
 		return nil, nil, err.Error(), -4
 	}
 
+	cacheInfo, err := s.redisClient.QueryClient(input.ClientUuid)
+	if err != nil {
+		log.Errorf(log.Fields{}, "fail to query client info: %v", err)
+		return nil, nil, err.Error(), -5
+	}
+
+	clientInfo.NetworkType = cacheInfo.NetworkType
 	s.redisClient.InsertKeyInfo("client", clientInfo.Id, clientInfo, 2*time.Hour)
 
 	shouldStop := false
