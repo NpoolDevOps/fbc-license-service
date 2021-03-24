@@ -53,7 +53,7 @@ type ClientInfo struct {
 	Status      string    `gorm:"column:status" json:"status"`
 	CreateTime  time.Time `gorm:"column:create_time" json:"create_time"`
 	ModifyTime  time.Time `gorm:"column:modify_time" json:"modify_time"`
-	NetworkType string    `json:"network_type"`
+	NetworkType string    `gorm:"-" json:"network_type"`
 }
 
 type UserInfo struct {
