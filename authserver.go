@@ -337,6 +337,7 @@ func (s *AuthServer) MyClientsRequest(w http.ResponseWriter, req *http.Request) 
 		output.Clients = s.mysqlClient.QueryClientInfos()
 		output.Users = s.mysqlClient.QueryUserInfos()
 	} else {
+		output.Users = []types.UserInfo{*clientUser}
 		output.Clients = s.mysqlClient.QueryClientInfosByUser(clientUser.Username)
 	}
 
