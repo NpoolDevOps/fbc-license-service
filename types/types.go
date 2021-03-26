@@ -80,7 +80,11 @@ type UpdateAuthInput struct {
 	ValidateDate int    `json:"validate_time"`
 }
 
-type ClientInfoInput struct {
+type ClientInfoBySpecInput struct {
+	Spec string `json:"spec"`
+}
+
+type ClientInfoByIdInput struct {
 	Id uuid.UUID `json:"id"`
 }
 

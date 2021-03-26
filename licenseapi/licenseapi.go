@@ -34,19 +34,53 @@ func getLicenseHost() (string, error) {
 	return myConfig.Host, err
 }
 
-func ClientInfo(input types.ClientInfoInput) (*types.ClientInfoOutput, error) {
+func ClientInfoById(input types.ClientInfoByIdInput) (*types.ClientInfoOutput, error) {
 	host, err := getLicenseHost()
 	if err != nil {
 		log.Errorf(log.Fields{}, "fail to get %v from etcd: %v", licenseDomain, err)
 		return nil, err
 	}
 
-	log.Infof(log.Fields{}, "req to http://%v%v", host, types.ClientInfoAPI)
+	log.Infof(log.Fields{}, "req to http://%v%v", host, types.ClientInfoByIdAPI)
 
 	resp, err := httpdaemon.R().
 		SetHeader("Content-Type", "application/json").
 		SetBody(input).
-		Post(fmt.Sprintf("http://%v%v", host, types.ClientInfoAPI))
+		Post(fmt.Sprintf("http://%v%v", host, types.ClientInfoByIdAPI))
+	if err != nil {
+		log.Errorf(log.Fields{}, "heartbeat error: %v", err)
+		return nil, err
+	}
+
+	if resp.StatusCode() != 200 {
+		return nil, xerrors.Errorf("NON-200 return")
+	}
+
+	apiResp, err := httpdaemon.ParseResponse(resp)
+	if err != nil {
+		return nil, err
+	}
+
+	output := types.ClientInfoOutput{}
+	b, _ := json.Marshal(apiResp.Body)
+	err = json.Unmarshal(b, &output)
+
+	return &output, err
+}
+
+func ClientInfoBySpec(input types.ClientInfoBySpecInput) (*types.ClientInfoOutput, error) {
+	host, err := getLicenseHost()
+	if err != nil {
+		log.Errorf(log.Fields{}, "fail to get %v from etcd: %v", licenseDomain, err)
+		return nil, err
+	}
+
+	log.Infof(log.Fields{}, "req to http://%v%v", host, types.ClientInfoBySpecAPI)
+
+	resp, err := httpdaemon.R().
+		SetHeader("Content-Type", "application/json").
+		SetBody(input).
+		Post(fmt.Sprintf("http://%v%v", host, types.ClientInfoBySpecAPI))
 	if err != nil {
 		log.Errorf(log.Fields{}, "heartbeat error: %v", err)
 		return nil, err
