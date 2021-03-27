@@ -347,10 +347,13 @@ func (s *AuthServer) MyClientsRequest(w http.ResponseWriter, req *http.Request) 
 		return nil, err.Error(), -4
 	}
 
-	clientUser, err := s.mysqlClient.QueryUserInfoById(user.Id)
-	if err != nil {
-		log.Errorf(log.Fields{}, "fail to find client user: %v", err)
-		return nil, err.Error(), -5
+	var clientUser *types.UserInfo
+	if !user.VisitorOnly {
+		clientUser, err = s.mysqlClient.QueryUserInfoById(user.Id)
+		if err != nil {
+			log.Errorf(log.Fields{}, "fail to find client user: %v", err)
+			return nil, err.Error(), -5
+		}
 	}
 
 	output := types.MyClientsOutput{
