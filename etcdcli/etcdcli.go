@@ -2,6 +2,7 @@ package etcdcli
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	log "github.com/EntropyPool/entropy-logger"
 	types "github.com/NpoolDevOps/fbc-license-service/types"
@@ -44,4 +45,26 @@ func Get(key string) ([][]byte, error) {
 	}
 
 	return vals, nil
+}
+
+type HostConfig struct {
+	Host string `json:"host"`
+}
+
+func GetHostByDomain(domain string) (string, error) {
+	var myConfig HostConfig
+
+	resp, err := Get(domain)
+	if err != nil {
+		log.Errorf(log.Fields{}, "cannot get %v: %v", domain, err)
+		return "", err
+	}
+
+	err = json.Unmarshal([]byte(resp[0]), &myConfig)
+	if err != nil {
+		log.Errorf(log.Fields{}, "cannot parse %v: %v", string(resp[0]), err)
+		return "", err
+	}
+
+	return myConfig.Host, err
 }
