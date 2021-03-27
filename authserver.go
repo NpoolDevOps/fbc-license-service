@@ -410,12 +410,16 @@ func (s *AuthServer) UpdateAuthRequest(w http.ResponseWriter, req *http.Request)
 		return nil, "operation not allowed", -5
 	}
 
+	if user.VisitorOnly {
+		return nil, "operation not allowed", -6
+	}
+
 	usernameInfo, err := authapi.UsernameInfo(authtypes.UsernameInfoInput{
 		AuthCode: input.AuthCode,
 		Username: input.Username,
 	})
 	if err != nil {
-		return nil, err.Error(), -6
+		return nil, err.Error(), -7
 	}
 
 	clientUser, err := s.mysqlClient.QueryUserInfoById(usernameInfo.Id)
@@ -433,7 +437,7 @@ func (s *AuthServer) UpdateAuthRequest(w http.ResponseWriter, req *http.Request)
 
 	err = s.mysqlClient.UpdateAuth(*clientUser)
 	if err != nil {
-		return nil, err.Error(), -6
+		return nil, err.Error(), -8
 	}
 
 	return nil, "", 0
