@@ -27,6 +27,7 @@ func Get(key string) ([][]byte, error) {
 	if err != nil {
 		return nil, err
 	}
+	defer etcdCli.Close()
 
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
