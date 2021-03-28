@@ -13,6 +13,8 @@ import (
 )
 
 func Get(key string) ([][]byte, error) {
+	os.Setenv("GRPC_GO_REQUIRE_HANDSHAKE", "off")
+
 	etcdHost := types.EtcdHost
 	env, ok := os.LookupEnv("ETCD_HOST_TEST")
 	if ok {
