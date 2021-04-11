@@ -356,6 +356,8 @@ func (s *AuthServer) MyClientsRequest(w http.ResponseWriter, req *http.Request) 
 		})
 		if err == nil {
 			userId = owner.Owner
+		} else {
+			log.Errorf(log.Fields{}, "fail to query visitor owner for %v: %v", userId, err)
 		}
 	}
 
