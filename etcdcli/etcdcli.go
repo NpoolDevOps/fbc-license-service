@@ -51,7 +51,7 @@ func Get(key string) ([][]byte, error) {
 }
 
 // put host etcd
-func post(key string,value string) (string, error) {
+func Post(key string,value string) (string, error) {
 	os.Setenv("GRPC_GO_REQUIRE_HANDSHAKE", "off")
 
 	etcdHost := types.EtcdHost
