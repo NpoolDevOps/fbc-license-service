@@ -77,7 +77,8 @@ func post(key string,value string) (string, error) {
 		fmt.Println("put etcd failed, err:", err)
 		return "put etcd failed key:" + key + ",vlaue:"+value ,err
 	}
-
+	return "put etcd success",nil
+	
 }
 
 type HostConfig struct {
