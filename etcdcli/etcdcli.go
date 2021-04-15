@@ -50,8 +50,39 @@ func Get(key string) ([][]byte, error) {
 	return vals, nil
 }
 
+// put host etcd
+func post(key string,value string) (string, error) {
+	os.Setenv("GRPC_GO_REQUIRE_HANDSHAKE", "off")
+
+	etcdHost := types.EtcdHost
+	env, ok := os.LookupEnv("ETCD_HOST_TEST")
+	if ok {
+		etcdHost = env
+	}
+	etcdCli, err := clientv3.New(clientv3.Config{
+		Endpoints: []string{etcdHost},
+	})
+	if err != nil {
+		return "etcdCli init error", err
+	}
+	defer etcdCli.Close()
+
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+	//put etcd
+	_, err = etcdCli.Put(ctx, key, value)
+
+
+	if err != nil {
+		fmt.Println("put etcd failed, err:", err)
+		return "put etcd failed key:" + key + ",vlaue:"+value ,err
+	}
+
+}
+
 type HostConfig struct {
 	Host string `json:"host"`
+
 }
 
 func GetHostByDomain(domain string) (string, error) {
