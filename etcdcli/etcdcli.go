@@ -70,7 +70,7 @@ func Put(key string,value string) (string, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 	//put etcd
-	_, err = etcdCli.Put(ctx, key, value)
+	_, err = etcdCli.Put(ctx, fmt.Sprintf("root/%v", key), value)
 
 
 	if err != nil {
