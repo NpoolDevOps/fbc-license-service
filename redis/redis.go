@@ -3,13 +3,14 @@ package fbcredis
 import (
 	"encoding/json"
 	"fmt"
+	"time"
+
 	log "github.com/EntropyPool/entropy-logger"
 	etcdcli "github.com/NpoolDevOps/fbc-license-service/etcdcli"
 	types "github.com/NpoolDevOps/fbc-license-service/types"
 	"github.com/go-redis/redis"
 	"github.com/google/uuid"
 	"golang.org/x/xerrors"
-	"time"
 )
 
 type RedisConfig struct {
@@ -64,7 +65,7 @@ func NewRedisCli(config RedisConfig) *RedisCli {
 
 var redisKeyPrefix = "fbc:license:server:"
 
-func (cli *RedisCli) InsertKeyInfo(keyWord string, id uuid.UUID, info interface{}, ttl time.Duration) error {
+func (cli *RedisCli) InsertKeyInfo(keyWord string, id interface{}, info interface{}, ttl time.Duration) error {
 	b, err := json.Marshal(info)
 	if err != nil {
 		return err

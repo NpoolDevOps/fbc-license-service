@@ -3,6 +3,10 @@ package main
 import (
 	"encoding/hex"
 	"encoding/json"
+	"io/ioutil"
+	"net/http"
+	"time"
+
 	log "github.com/EntropyPool/entropy-logger"
 	authapi "github.com/NpoolDevOps/fbc-auth-service/authapi"
 	authtypes "github.com/NpoolDevOps/fbc-auth-service/types"
@@ -11,11 +15,8 @@ import (
 	fbcmysql "github.com/NpoolDevOps/fbc-license-service/mysql"
 	fbcredis "github.com/NpoolDevOps/fbc-license-service/redis"
 	types "github.com/NpoolDevOps/fbc-license-service/types"
-	"github.com/NpoolRD/http-daemon"
+	httpdaemon "github.com/NpoolRD/http-daemon"
 	"github.com/google/uuid"
-	"io/ioutil"
-	"net/http"
-	"time"
 )
 
 type AuthServerConfig struct {
@@ -190,6 +191,15 @@ func (s *AuthServer) ExchangeKeyRequest(w http.ResponseWriter, req *http.Request
 	if err != nil {
 		log.Errorf(log.Fields{}, "fail to insert session info: %v", err)
 		return nil, err.Error(), -4
+	}
+
+	err = s.redisClient.InsertKeyInfo("device", input.Spec, fbcredis.DeviceInfo{
+		Spec:      input.Spec,
+		SessionId: sessionId,
+	}, 24*100000*time.Hour)
+	if err != nil {
+		log.Errorf(log.Fields{}, "fail to insert device info: %v", err)
+		return nil, err.Error(), -5
 	}
 
 	return types.ExchangeKeyOutput{
