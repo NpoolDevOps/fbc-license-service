@@ -128,7 +128,7 @@ func (cli *RedisCli) QueryClientExpire(cid uuid.UUID) (bool, error) {
 }
 
 type SessionInfo struct {
-	SessionId    string
+	SessionId    uuid.UUID
 	MyPubKey     string
 	ClientPubKey string
 }

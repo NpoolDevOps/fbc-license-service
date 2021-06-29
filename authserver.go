@@ -163,19 +163,19 @@ func (s *AuthServer) ExchangeKeyRequest(w http.ResponseWriter, req *http.Request
 
 	var sessionId uuid.UUID
 	sessionExist := false
+	var localRsa *crypto.RsaCrypto
+	var myPubKey string
 
 	device, err := s.redisClient.QueryDevice(input.Spec)
 	if err == nil {
 		sessionId = device.SessionId
-		_, err := s.redisClient.QuerySession(sessionId)
+		info, err := s.redisClient.QuerySession(sessionId)
 		if err != nil {
 			return nil, err.Error(), -4
 		}
 		sessionExist = true
+		myPubKey = info.MyPubKey
 	}
-
-	var localRsa *crypto.RsaCrypto
-	var myPubKey string
 
 	if !sessionExist {
 		sessionId = uuid.New()
@@ -185,6 +185,7 @@ func (s *AuthServer) ExchangeKeyRequest(w http.ResponseWriter, req *http.Request
 
 	err = s.redisClient.InsertKeyInfo("session", sessionId,
 		fbcredis.SessionInfo{
+			SessionId:    sessionId,
 			MyPubKey:     myPubKey,
 			ClientPubKey: input.PublicKey,
 		}, 24*100000*time.Hour)
