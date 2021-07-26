@@ -71,7 +71,7 @@ func (cli *RedisCli) InsertKeyInfo(keyWord string, id interface{}, info interfac
 		return err
 	}
 	err = cli.client.Set(fmt.Sprintf("%v:%v:%v", redisKeyPrefix, keyWord, id),
-		string(b), ttl*time.Second).Err()
+		string(b), ttl).Err()
 	if err != nil {
 		return err
 	}
