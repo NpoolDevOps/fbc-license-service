@@ -15,6 +15,8 @@ github.com/NpoolDevOps/fbc-license-service v0.0.0-20210319140422-63c83712a695/go
 github.com/NpoolDevOps/fbc-license-service v0.0.0-20210328062839-d1527bc31f7e/go.mod h1:/Vzkzp2z+EnECJv/0xe5vAp8TJCydxXkq5MYNivfcTI=
 github.com/NpoolRD/http-daemon v0.0.0-20210210091512-241ac31803ef h1:hFDeLUZfb6TJ1p8butePgmGzTzZ1duiNZmgjfV0NSAY=
 github.com/NpoolRD/http-daemon v0.0.0-20210210091512-241ac31803ef/go.mod h1:1zc5D8V0YuVLbkAOLaWY7V4jaZ4iqOibGvJcx+SpZOM=
+github.com/NpoolRD/http-daemon v0.0.0-20220506133728-7943c2cae9a7 h1:SSaT94Uqf0guagoBxMS0dIPCMVtqigLzRltKwOTFMj0=
+github.com/NpoolRD/http-daemon v0.0.0-20220506133728-7943c2cae9a7/go.mod h1:1zc5D8V0YuVLbkAOLaWY7V4jaZ4iqOibGvJcx+SpZOM=
 github.com/PuerkitoBio/goquery v1.5.1/go.mod h1:GsLWisAFVj4WgDibEWF4pvYnkVQBpKBKeU+7zCJoLcc=
 github.com/andybalholm/cascadia v1.1.0/go.mod h1:GsXiBklL0woXo1j/WYWtSYYC4ouU9PqHO0sqidkEA4Y=
 github.com/census-instrumentation/opencensus-proto v0.2.1/go.mod h1:f6KPmirojxKA12rnyqOA5BBL4O983OfeGPqjHWSTneU=

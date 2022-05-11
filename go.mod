@@ -5,7 +5,7 @@ go 1.15
 require (
 	github.com/EntropyPool/entropy-logger v0.0.0-20210210082337-af230fd03ce7
 	github.com/NpoolDevOps/fbc-auth-service v0.0.0-20210407152903-61cdde5f2787
-	github.com/NpoolRD/http-daemon v0.0.0-20210210091512-241ac31803ef
+	github.com/NpoolRD/http-daemon v0.0.0-20220506133728-7943c2cae9a7 // indirect
 	github.com/coreos/etcd v3.3.25+incompatible
 	github.com/go-redis/redis v6.15.9+incompatible
 	github.com/google/uuid v1.2.0
